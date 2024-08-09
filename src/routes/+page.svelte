@@ -1,2 +1,22 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<script lang="ts">
+	import type { Scene } from 'phaser';
+	import PhaserGame, { type TPhaserRef } from '../game/PhaserGame.svelte';
+	let phaserRef: TPhaserRef = { game: null, scene: null };
+	// Event emitted from the PhaserGame component
+	const currentScene = (scene: Scene) => {};
+</script>
+
+<div id="app">
+	<PhaserGame bind:phaserRef currentActiveScene={currentScene} />
+</div>
+
+<style>
+	#app {
+		width: 100%;
+		height: 100vh;
+		overflow: hidden;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+</style>
