@@ -12,7 +12,7 @@ export class MainMenu extends Scene {
 	}
 
 	create() {
-    this.background = this.add.image(this.centerX(), this.centerY(), 'background-2');
+		this.background = this.add.image(this.centerX(), this.centerY(), 'background-2');
 		this.background.setDisplaySize(this.scale.width, this.scale.height);
 		this.logo = this.add.image(this.centerX(), this.centerY() / 4, 'logo').setDepth(100);
 		//this.scale.on('resize', this.resize, this);
@@ -43,9 +43,7 @@ export class MainMenu extends Scene {
 	}
 
 	resize(gameSize: { width: any; height: any }, baseSize: any, displaySize: any, resolution: any) {
-		console.log('resize', gameSize, baseSize, displaySize, resolution);
-    console.log({ window })
-    let width = gameSize.width;
+		let width = gameSize.width;
 		let height = gameSize.height;
 
 		this.background.setPosition(this.centerX(), this.centerY());

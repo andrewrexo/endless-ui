@@ -24,7 +24,6 @@
 		if (scene) {
 			isInGame = true;
 		}
-		console.log('currentScene', scene);
 	};
 </script>
 
