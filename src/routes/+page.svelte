@@ -1,13 +1,23 @@
 <script lang="ts">
 	import type { Scene } from 'phaser';
 	import PhaserGame, { type TPhaserRef } from '../game/PhaserGame.svelte';
-	import type { MainMenu } from '../game/scenes/main-menu';
-	import Debug from '../components/pane-debug.svelte';
+	import { MainMenu } from '../game/scenes/main-menu';
+	import UI from '../components/ui/game.svelte';
 
 	let phaserRef: TPhaserRef = {
 		game: null,
 		scene: null
 	};
+
+	let isInGame = $state(false);
+
+	let gameContainer: HTMLElement;
+
+	$effect(() => {
+		if (gameContainer && phaserRef.game) {
+			const canvas = gameContainer.querySelector('canvas');
+		}
+	});
 
 	const changeScene = () => {
 		const scene = phaserRef.scene as MainMenu;
@@ -16,24 +26,39 @@
 		}
 	};
 
-	// Event emitted from the PhaserGame component
 	const currentScene = (scene: Scene) => {
+		if (scene) {
+			isInGame = true;
+		}
 		console.log('currentScene', scene);
 	};
 </script>
 
 <div id="app">
-	<Debug {changeScene} />
-	<PhaserGame bind:phaserRef currentActiveScene={currentScene} />
+	<div id="game-container" bind:this={gameContainer}>
+		<PhaserGame bind:phaserRef currentActiveScene={currentScene} />
+		{#if isInGame}
+			<UI />
+		{/if}
+	</div>
 </div>
 
 <style>
+	@font-face {
+		font-family: 'Monogram';
+		font-style: normal;
+		font-weight: 500;
+		src: url('/assets/fonts/monogram.ttf');
+	}
+
 	#app {
-		width: 100%;
-		height: 100vh;
 		overflow: hidden;
-		display: flex;
-		justify-content: center;
-		align-items: center;
+		background-color: #000;
+		font-family: 'Monogram';
+	}
+
+	#game-container {
+		position: relative;
+		overflow: hidden;
 	}
 </style>
