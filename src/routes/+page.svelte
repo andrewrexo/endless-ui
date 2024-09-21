@@ -4,20 +4,14 @@
 	import { MainMenu } from '../game/scenes/main-menu';
 	import UI from '../components/ui/game.svelte';
 
-	let phaserRef: TPhaserRef = {
+	let phaserRef: TPhaserRef = $state({
 		game: null,
 		scene: null
-	};
+	});
 
 	let isInGame = $state(false);
 
 	let gameContainer: HTMLElement;
-
-	$effect(() => {
-		if (gameContainer && phaserRef.game) {
-			const canvas = gameContainer.querySelector('canvas');
-		}
-	});
 
 	const changeScene = () => {
 		const scene = phaserRef.scene as MainMenu;
