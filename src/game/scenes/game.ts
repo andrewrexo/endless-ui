@@ -2,18 +2,12 @@ import { EventBus } from '../event-bus';
 import { Scene } from 'phaser';
 import { MapRenderer } from '../render/map';
 import { centerX as scaleCenterX, centerY as scaleCenterY } from '../scale';
+import { PlayerSprite } from '../entities/player-sprite';
 
 export class Game extends Scene {
 	map!: MapRenderer;
 	cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-	player!: Phaser.GameObjects.Rectangle;
-	playerTileX: number = 0;
-	playerTileY: number = 0;
-	moveSpeed: number = 3; // Pixels per frame
-	isMoving: boolean = false;
-	targetTileX: number = 0;
-	targetTileY: number = 0;
-	movementProgress: number = 0;
+	player!: PlayerSprite;
 
 	constructor() {
 		super('Game');
@@ -25,21 +19,16 @@ export class Game extends Scene {
 		this.map.drawMap();
 
 		// Create player
-		this.player = this.add.rectangle(0, 0, 32, 32, 0xff0000);
-		this.map.add(this.player);
-		this.player.setDepth(1);
-
-		// Set initial player position
-		this.updatePlayerPosition();
+		const startPos = this.map.getTilePosition(0, 0);
+		this.player = new PlayerSprite(this, startPos.x, startPos.y - 16);
 
 		// Set up camera
 		this.cameras.main.setZoom(1);
+		this.cameras.main.startFollow(this.player, true);
+		this.cameras.main.fadeIn(500, 0, 0, 0);
 
 		// Render UI
 		this.scene.launch('NativeUI');
-		// Fade in the camera
-		this.cameras.main.fadeIn(500, 0, 0, 0);
-		this.cameras.main.startFollow(this.player, true);
 
 		this.cursors = this.input.keyboard!.createCursorKeys();
 
@@ -52,7 +41,7 @@ export class Game extends Scene {
 	}
 
 	handlePlayerInput() {
-		if (this.isMoving) return;
+		if (this.player.isMoving) return;
 
 		let dx = 0;
 		let dy = 0;
@@ -63,46 +52,30 @@ export class Game extends Scene {
 		else if (this.cursors.down.isDown) dy += 1;
 
 		if (dx !== 0 || dy !== 0) {
-			this.startPlayerMovement(dx, dy);
-		}
-	}
-
-	startPlayerMovement(dx: number, dy: number) {
-		this.targetTileX = this.playerTileX + dx;
-		this.targetTileY = this.playerTileY + dy;
-
-		if (this.map.isValidTile(this.targetTileX, this.targetTileY)) {
-			this.isMoving = true;
-			this.movementProgress = 0;
+			const targetTileX = this.player.tileX + dx;
+			const targetTileY = this.player.tileY + dy;
+			if (this.map.isValidTile(targetTileX, targetTileY)) {
+				this.player.startMovement(dx, dy);
+			}
 		}
 	}
 
 	updatePlayerMovement() {
-		if (!this.isMoving) return;
+		this.player.updateMovement(this.map.tileWidth);
 
-		this.movementProgress += this.moveSpeed;
-
-		if (this.movementProgress >= this.map.tileWidth) {
-			// Movement complete
-			this.playerTileX = this.targetTileX;
-			this.playerTileY = this.targetTileY;
-			this.updatePlayerPosition();
-			this.isMoving = false;
-			this.movementProgress = 0;
-		} else {
-			// Interpolate position
-			const startPos = this.map.getTilePosition(this.playerTileX, this.playerTileY);
-			const endPos = this.map.getTilePosition(this.targetTileX, this.targetTileY);
-			const progress = this.movementProgress / this.map.tileWidth;
+		if (this.player.isMoving) {
+			const startPos = this.map.getTilePosition(this.player.tileX, this.player.tileY);
+			const endPos = this.map.getTilePosition(this.player.targetTileX, this.player.targetTileY);
+			const progress = this.player.movementProgress / this.map.tileWidth;
 
 			this.player.x = Math.round(startPos.x + (endPos.x - startPos.x) * progress);
-			this.player.y = Math.round(startPos.y + (endPos.y - startPos.y) * progress);
+			this.player.y = Math.round(
+				startPos.y + (endPos.y - startPos.y) * progress - this.player.offsetY
+			);
+		} else {
+			const pos = this.map.getTilePosition(this.player.tileX, this.player.tileY);
+			this.player.setPosition(Math.round(pos.x), Math.round(pos.y - this.player.offsetY));
 		}
-	}
-
-	updatePlayerPosition() {
-		const pos = this.map.getTilePosition(this.playerTileX, this.playerTileY);
-		this.player.setPosition(Math.round(pos.x), Math.round(pos.y));
 	}
 
 	changeScene() {
@@ -112,6 +85,7 @@ export class Game extends Scene {
 	centerX() {
 		return scaleCenterX(this.scale);
 	}
+
 	centerY() {
 		return scaleCenterY(this.scale);
 	}
