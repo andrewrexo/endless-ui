@@ -8,6 +8,7 @@ export class Game extends Scene {
 	map!: MapRenderer;
 	cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
 	player!: PlayerSprite;
+	currentPath: { x: number; y: number }[] = [];
 
 	constructor() {
 		super('Game');
@@ -33,15 +34,36 @@ export class Game extends Scene {
 		this.cursors = this.input.keyboard!.createCursorKeys();
 
 		EventBus.emit('current-scene-ready', this);
+		EventBus.on('tile-clicked', this.handleTileClick, this);
 	}
 
 	update(time: number, delta: number) {
 		this.handlePlayerInput();
 		this.updatePlayerMovement();
+		this.updatePlayerPath();
+	}
+
+	handleTileClick = (tile: { x: number; y: number }) => {
+		const path = this.map.findPath(this.player.tileX, this.player.tileY, tile.x, tile.y);
+		console.log(path);
+		if (path.length > 1) {
+			// Changed from > 0 to > 1
+			this.currentPath = path.slice(1); // Remove the first element (current position)
+		}
+	};
+
+	updatePlayerPath() {
+		if (this.currentPath.length > 0 && !this.player.isMoving) {
+			const nextTile = this.currentPath[0];
+			const dx = nextTile.x - this.player.tileX;
+			const dy = nextTile.y - this.player.tileY;
+			this.player.startMovement(dx, dy);
+			this.currentPath.shift();
+		}
 	}
 
 	handlePlayerInput() {
-		if (this.player.isMoving) return;
+		if (this.player.isMoving || this.currentPath.length > 0) return;
 
 		let dx = 0;
 		let dy = 0;
@@ -88,5 +110,10 @@ export class Game extends Scene {
 
 	centerY() {
 		return scaleCenterY(this.scale);
+	}
+
+	destroy() {
+		EventBus.off('tile-clicked', this.handleTileClick, this);
+		// ... other cleanup code ...
 	}
 }
