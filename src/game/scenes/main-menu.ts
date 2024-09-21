@@ -12,10 +12,12 @@ export class MainMenu extends Scene {
 	}
 
 	create() {
-		this.background = this.add.image(512, 384, 'background');
-		this.logo = this.add.image(512, 300, 'logo').setDepth(100);
+    this.background = this.add.image(this.centerX(), this.centerY(), 'background-2');
+		this.background.setDisplaySize(this.scale.width, this.scale.height);
+		this.logo = this.add.image(this.centerX(), this.centerY() / 4, 'logo').setDepth(100);
+		//this.scale.on('resize', this.resize, this);
 		this.title = this.add
-			.text(512, 460, 'Main Menu', {
+			.text(this.centerX(), this.centerY() / 2, 'Main Menu', {
 				fontFamily: 'Arial Black',
 				fontSize: 38,
 				color: '#ffffff',
@@ -31,5 +33,25 @@ export class MainMenu extends Scene {
 
 	changeScene() {
 		this.scene.start('Game');
+	}
+
+	centerX() {
+		return this.scale.width / 2;
+	}
+	centerY() {
+		return this.scale.height / 2;
+	}
+
+	resize(gameSize: { width: any; height: any }, baseSize: any, displaySize: any, resolution: any) {
+		console.log('resize', gameSize, baseSize, displaySize, resolution);
+    console.log({ window })
+    let width = gameSize.width;
+		let height = gameSize.height;
+
+		this.background.setPosition(this.centerX(), this.centerY());
+		this.background.setDisplaySize(width, height);
+
+		this.title.setPosition(this.centerX(), this.centerY() / 2);
+		this.logo.setPosition(this.centerX(), this.centerY() / 4);
 	}
 }

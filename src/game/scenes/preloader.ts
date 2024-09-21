@@ -1,28 +1,57 @@
 import { Scene } from 'phaser';
 
 export class Preloader extends Scene {
+  bar!: Phaser.GameObjects.Rectangle;
+  text!: Phaser.GameObjects.Text;
+  progress: number = 0;
+
 	constructor() {
 		super('Preloader');
 	}
 
 	init() {
-		this.add.image(512, 384, 'background');
-		this.add.rectangle(512, 384, 468, 32).setStrokeStyle(1, 0xffffff);
-		const bar = this.add.rectangle(512 - 230, 384, 4, 28, 0xffffff);
+		this.add.image(this.scale.width / 2, this.scale.height / 2, 'background-2');
+		this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width / 2, 32).setStrokeStyle(2, 0x000000);
+    this.text = this.add.text(this.scale.width / 2, this.scale.height / 2 - 40, 'Loading...', { color: '#000000' }).setOrigin(0.5);
+    
+    this.bar = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width / 2, 32, 0x00ff00);
 
 		this.load.on('progress', (progress: number) => {
-			bar.width = 4 + 460 * progress;
+      this.progress = progress;
+			this.bar.width = this.scale.width / 2 * progress;  
 		});
+
+    this.load.on('filecomplete', (file: string) => {
+      this.text.setText(`loaded ${file}. ${this.progress * 100}% complete.`);
+    });
 	}
 
 	preload() {
 		this.load.setPath('assets');
 		this.load.image('logo', 'logo.png');
+    this.load.image('boxTexture', 'paper-bg.png')
+    this.load.image('tile', 'tile.png')
 	}
 
 	create() {
-		//  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
-		//  For example, you can define global animations here, so we can use them in other scenes.
-		this.scene.start('MainMenu');
+		// Create a black rectangle covering the entire screen
+		const fadeRect = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000);
+		fadeRect.setOrigin(0, 0);
+		fadeRect.setAlpha(1); // Start fully opaque
+
+    this.text.setText(`loading ${this.progress * 100}% complete. sending you to the game...`);
+    this.text.setColor('#00ff00');
+    this.text.setBackgroundColor('#000000');
+    this.text.setPadding(4, 4, 4, 4);
+
+		this.scene.transition({
+			target: 'Game',
+			duration: 100,
+      moveBelow: true,
+			onUpdate: (progress: number) => {
+				// Fade out the black rectangle
+				fadeRect.setAlpha(0 + progress);
+			},
+		});
 	}
 }
