@@ -1,3 +1,5 @@
+import Phaser from 'phaser';
+
 export class MapRenderer extends Phaser.GameObjects.Container {
 	tileWidth: number = 64;
 	tileHeight: number = 32;
@@ -19,7 +21,6 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		this.map = map;
 		//this.mapWidth = this.map.width;
 		//this.mapHeight = this.map.height;
-
 		this.mapWidth = 25;
 		this.mapHeight = 25;
 	}
@@ -28,10 +29,21 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		const { x: iCoord, y: jCoord } = this.getTilePosition(x, y);
 
 		const tileSprite = this.scene.add.image(iCoord, jCoord, 'tile');
-		this.add(tileSprite);
-		tileSprite.depth = 0;
+		tileSprite.setInteractive(this.scene.input.makePixelPerfect());
 
-		this.scene.add.existing(this);
+		this.add(tileSprite);
+
+		tileSprite.on('pointerover', () => {
+			if (tileSprite.texture.key === 'tile') {
+				tileSprite.setTexture('tile-hover');
+				tileSprite.setToTop();
+			}
+		});
+
+		tileSprite.on('pointerout', () => {
+			tileSprite.setTexture('tile');
+			tileSprite.setToBack();
+		});
 	}
 
 	drawMap() {
@@ -42,6 +54,8 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 				this.drawTile(i, j, 1);
 			}
 		}
+
+		this.scene.add.existing(this);
 	}
 
 	getTilePosition(tileX: number, tileY: number): { x: number; y: number } {
@@ -61,8 +75,14 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 	}
 
 	getTileFromWorldPosition(x: number, y: number): { x: number; y: number } {
-		const tileX = Math.round((x / (this.tileWidth / 2) + y / (this.tileHeight / 2)) / 2);
-		const tileY = Math.round((y / (this.tileHeight / 2) - x / (this.tileWidth / 2)) / 2);
+		// Adjust for the tile's origin being at the top-left corner
+		x += this.tileWidth / 2;
+		y += this.tileHeight / 2;
+
+		// Convert screen coordinates to isometric coordinates
+		const tileX = Math.floor((y / this.tileHeight + x / this.tileWidth) / 2);
+		const tileY = Math.floor((y / this.tileHeight - x / this.tileWidth) / 2);
+
 		return { x: tileX, y: tileY };
 	}
 }
