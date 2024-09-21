@@ -1,6 +1,6 @@
 import { Scene, GameObjects } from 'phaser';
 
-export class PlayerSprite extends GameObjects.Sprite {
+export class PlayerSprite extends GameObjects.Container {
 	tileX: number = 0;
 	tileY: number = 0;
 	moveSpeed: number = 3; // Pixels per frame
@@ -10,13 +10,34 @@ export class PlayerSprite extends GameObjects.Sprite {
 	movementProgress: number = 0;
 	direction: 'up' | 'down' | 'left' | 'right' = 'down';
 	offsetY: number = 16;
+	private usernameText: GameObjects.Text;
+	private playerSprite: GameObjects.Sprite;
 
-	constructor(scene: Scene, x: number, y: number) {
-		super(scene, x, y, 'player', 1);
+	constructor(scene: Scene, x: number, y: number, username: string) {
+		super(scene, x, y);
 		scene.add.existing(this);
-		this.setDepth(2);
+
+		this.playerSprite = scene.add.sprite(x, y, 'player', 1);
+		this.add(this.playerSprite);
 		this.createAnimations();
 		this.playIdleAnimation();
+		this.playerSprite.setDepth(3);
+		// Create username text
+		this.usernameText = scene.add.text(this.playerSprite.x, this.playerSprite.y, username, {
+			fontSize: '12px',
+			color: '#ffffff',
+			stroke: '#000000',
+			strokeThickness: 4
+		});
+
+		this.usernameText.setResolution(5);
+
+		this.add(this.usernameText);
+
+		this.playerSprite.setOrigin(0.5, 0);
+
+		this.usernameText.setOrigin(0.5, 1);
+		this.usernameText.setDepth(3);
 	}
 
 	startMovement(dx: number, dy: number) {
@@ -28,28 +49,28 @@ export class PlayerSprite extends GameObjects.Sprite {
 
 		if (dx < 0) {
 			this.direction = 'left';
-			this.play('player-walk-left', true);
-			this.setFlipX(true);
+			this.playerSprite.play('player-walk-left', true);
+			this.playerSprite.setFlipX(true);
 		} else if (dx > 0) {
 			this.direction = 'right';
-			this.play('player-walk-right', true);
-			this.setFlipX(false);
+			this.playerSprite.play('player-walk-right', true);
+			this.playerSprite.setFlipX(false);
 		} else if (dy < 0) {
 			this.direction = 'up';
-			this.play('player-walk-up', true);
-			this.setFlipX(false);
+			this.playerSprite.play('player-walk-up', true);
+			this.playerSprite.setFlipX(false);
 		} else if (dy > 0) {
 			this.direction = 'down';
-			this.play('player-walk-down', true);
-			this.setFlipX(true);
+			this.playerSprite.play('player-walk-down', true);
+			this.playerSprite.setFlipX(true);
 		}
 	}
 
 	updateMovement(tileWidth: number) {
 		if (
 			!this.isMoving &&
-			this.anims.currentAnim?.key !== 'player-idle-rear' &&
-			this.anims.currentAnim?.key !== 'player-idle-front'
+			this.playerSprite.anims.currentAnim?.key !== 'player-idle-rear' &&
+			this.playerSprite.anims.currentAnim?.key !== 'player-idle-front'
 		) {
 			this.playIdleAnimation();
 			return;
@@ -68,18 +89,18 @@ export class PlayerSprite extends GameObjects.Sprite {
 	playIdleAnimation() {
 		switch (this.direction) {
 			case 'up':
-				this.play('player-idle-rear', true);
+				this.playerSprite.play('player-idle-rear', true);
 				break;
 			case 'down':
-				this.play('player-idle-front', true);
+				this.playerSprite.play('player-idle-front', true);
 				break;
 			case 'left':
-				this.play('player-idle-rear', true);
-				this.setFlipX(true);
+				this.playerSprite.play('player-idle-rear', true);
+				this.playerSprite.setFlipX(true);
 				break;
 			case 'right':
-				this.play('player-idle-front', true);
-				this.setFlipX(false);
+				this.playerSprite.play('player-idle-front', true);
+				this.playerSprite.setFlipX(false);
 				break;
 		}
 	}

@@ -21,11 +21,14 @@ export class Game extends Scene {
 
 		// Create player
 		const startPos = this.map.getTilePosition(0, 0);
-		this.player = new PlayerSprite(this, startPos.x, startPos.y - 16);
+		const username = 'drei'; // Replace with actual username retrieval
+
+		this.player = new PlayerSprite(this, startPos.x, startPos.y - 16, username);
 
 		// Set up camera
 		this.cameras.main.setZoom(1);
-		this.cameras.main.startFollow(this.player, true);
+		this.cameras.main.startFollow(this.player, false);
+		this.cameras.main.setRoundPixels(false);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
 
 		// Render UI
@@ -44,10 +47,10 @@ export class Game extends Scene {
 	}
 
 	handleTileClick = (tile: { x: number; y: number }) => {
+		if (this.player.isMoving) return;
+
 		const path = this.map.findPath(this.player.tileX, this.player.tileY, tile.x, tile.y);
-		console.log(path);
 		if (path.length > 1) {
-			// Changed from > 0 to > 1
 			this.currentPath = path.slice(1); // Remove the first element (current position)
 		}
 	};
