@@ -5,7 +5,7 @@ export class ChatBubble extends GameObjects.Container {
 	private text: GameObjects.Text;
 	private padding: number = 8;
 	private maxWidth: number = 200;
-	private tailHeight: number = 8;
+	private tailHeight: number = 4;
 
 	constructor(scene: Scene, x: number, y: number, message: string) {
 		super(scene, Math.round(x), Math.round(y));
@@ -16,9 +16,10 @@ export class ChatBubble extends GameObjects.Container {
 
 		this.text = scene.add.text(0, 0, message, {
 			fontSize: '16px',
-			color: '#202020',
+			stroke: '#303030',
+			strokeThickness: 3,
+			color: '#ffffff',
 			fontFamily: 'Monogram',
-
 			wordWrap: { width: this.maxWidth - this.padding * 2, useAdvancedWrap: true },
 			resolution: 10 // Changed to 1 for pixel-perfect rendering
 		});
@@ -40,8 +41,8 @@ export class ChatBubble extends GameObjects.Container {
 		const tailWidth = 10;
 
 		this.background.clear();
-		this.background.fillStyle(0xffffff, 0.8);
-		this.background.lineStyle(2, 0x606060, 1);
+		this.background.fillStyle(0x909090, 0.8);
+		this.background.lineStyle(1, 0x000000, 0.5);
 
 		// Start path for the entire bubble shape
 		this.background.beginPath();
@@ -111,7 +112,7 @@ export class ChatBubble extends GameObjects.Container {
 		this.background.fillPath();
 		this.background.strokePath();
 
-		this.text.setPosition(0, -Math.floor(height / 2) - 4);
+		this.text.setPosition(0, -Math.floor(height / 2) - 2);
 	}
 
 	public setMessage(message: string) {

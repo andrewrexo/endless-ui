@@ -10,7 +10,7 @@ export class Game extends Scene {
 	cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
 	player!: PlayerSprite;
 	currentPath: { x: number; y: number }[] = [];
-	private shootKey!: Phaser.Input.Keyboard.Key;
+	private attackKey!: Phaser.Input.Keyboard.Key;
 
 	constructor() {
 		super('Game');
@@ -29,15 +29,15 @@ export class Game extends Scene {
 
 		// Set up camera
 		this.cameras.main.setZoom(1);
-		this.cameras.main.startFollow(this.player, false);
-		this.cameras.main.setRoundPixels(false);
+		this.cameras.main.startFollow(this.player, true);
+		this.cameras.main.setRoundPixels(true);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
 
 		// Render UI
 		this.scene.launch('NativeUI');
 
 		this.cursors = this.input.keyboard!.createCursorKeys();
-		this.shootKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+		this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
 		EventBus.emit('current-scene-ready', this);
 		EventBus.on('tile-clicked', this.handleTileClick, this);
@@ -131,10 +131,8 @@ export class Game extends Scene {
 	}
 
 	handleShooting() {
-		if (this.shootKey.isDown) {
-			this.player.shoot();
-		} else if (this.player.isShooting) {
-			this.player.stopShooting();
+		if (this.attackKey.isDown) {
+			this.player.attack();
 		}
 	}
 }

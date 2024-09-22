@@ -128,7 +128,7 @@
 		height: 1rem;
 		border: 1px solid #ccc;
 		border-radius: 0.25rem;
-		padding: 0.5rem;
+		padding: 0.25rem 0.5rem;
 		font-family: 'Monogram';
 		font-size: 16px;
 		color: white;
@@ -139,6 +139,10 @@
 	.bottom-left input:focus {
 		outline: none;
 		outline: 1px solid white;
+	}
+
+	.bottom-left input::placeholder {
+		color: #ccc;
 	}
 
 	.status-text {

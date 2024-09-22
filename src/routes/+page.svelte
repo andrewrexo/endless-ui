@@ -3,6 +3,7 @@
 	import PhaserGame, { type TPhaserRef } from '../game/PhaserGame.svelte';
 	import { MainMenu } from '../game/scenes/main-menu';
 	import UI from '../components/ui/game.svelte';
+	import '../../static/assets/fonts/abaddon-bold.ttf';
 
 	let phaserRef: TPhaserRef = $state({
 		game: null,
@@ -44,10 +45,17 @@
 		src: url('/assets/fonts/monogram.ttf');
 	}
 
+	@font-face {
+		font-family: 'Abaddon';
+		font-style: normal;
+		font-weight: 500;
+		src: url('/assets/fonts/abaddon-bold.ttf');
+	}
+
 	#app {
 		overflow: hidden;
 		background-color: #000;
-		font-family: 'Monogram';
+		font-family: 'Monogram', 'Abaddon';
 	}
 
 	#game-container {
