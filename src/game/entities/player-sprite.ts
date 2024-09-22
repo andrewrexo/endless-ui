@@ -37,6 +37,7 @@ export class PlayerSprite extends GameObjects.Container {
 		this.createAnimations();
 		this.playIdleAnimation();
 		this.playerSprite.setDepth(3);
+		this.playerSprite.setOrigin(0.5, 0);
 		// Create username text
 		this.usernameText = scene.add.text(this.playerSprite.x, this.playerSprite.y, username, {
 			fontSize: '24px',
