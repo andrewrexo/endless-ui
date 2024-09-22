@@ -9,14 +9,14 @@ import { NativeUI } from './scenes/native-ui';
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config: Phaser.Types.Core.GameConfig = {
 	type: WEBGL,
-	width: 640,
-	height: 480,
+	width: 800,
+	height: 600,
 	scale: {
-		autoCenter: Phaser.Scale.CENTER_BOTH,
-		width: 640,
-		height: 480,
+		width: 800,
+		height: 600,
 		parent: 'game-container',
-		autoRound: true
+		autoRound: true,
+		zoom: 1
 	},
 	backgroundColor: '#000',
 	scene: [Boot, Preloader, MainMenu, MainGame, NativeUI],
@@ -28,6 +28,13 @@ const config: Phaser.Types.Core.GameConfig = {
 	},
 	input: {
 		windowEvents: false
+	},
+	physics: {
+		default: 'arcade',
+		arcade: {
+			gravity: { x: 0, y: 300 },
+			debug: false
+		}
 	}
 };
 
