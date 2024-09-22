@@ -30,6 +30,7 @@ export class PlayerSprite extends GameObjects.Container {
 
 	private particles: Phaser.GameObjects.Particles.ParticleEmitter;
 	private chatBubble: ChatBubble | null = null;
+	private chatBubbleTimer: Phaser.Time.TimerEvent | null = null;
 
 	constructor(scene: Scene, x: number, y: number, username: string) {
 		super(scene, x, y);
@@ -44,12 +45,11 @@ export class PlayerSprite extends GameObjects.Container {
 		this.playerSprite.setOrigin(0.5, 0);
 		// Create username text
 		this.usernameText = scene.add.text(this.playerSprite.x, this.playerSprite.y, username, {
-			fontSize: '24px',
+			fontSize: '18px',
 			color: '#ffffff',
 			fontFamily: 'Monogram',
 			stroke: '#000000',
-			strokeThickness: 5,
-			fontStyle: 'bold'
+			strokeThickness: 5
 		});
 
 		this.usernameText.setResolution(10);
@@ -329,25 +329,32 @@ export class PlayerSprite extends GameObjects.Container {
 
 	showChatBubble(message: string) {
 		if (this.chatBubble) {
-			this.chatBubble.destroy();
+			// Update existing chat bubble
+			this.chatBubble.setMessage(message);
+		} else {
+			// Create new chat bubble
+			const bubbleX = 0;
+			const bubbleY = -this.playerSprite.height + 6;
+			this.chatBubble = new ChatBubble(this.scene, bubbleX, bubbleY, message);
+			this.add(this.chatBubble);
 		}
 
-		const bubbleX = 0;
-		const bubbleY = -this.playerSprite.height + 2;
-
-		this.chatBubble = new ChatBubble(this.scene, bubbleX, bubbleY, message);
-		this.add(this.chatBubble);
-
-		// hide username text cause it looks ugly with too much visible
+		// Hide username text
 		this.usernameText.setVisible(false);
 
-		// Auto-destroy after 5 seconds
-		this.scene.time.delayedCall(5000, () => {
-			if (this.chatBubble) {
-				this.usernameText.setVisible(true);
-				this.chatBubble.destroy();
-				this.chatBubble = null;
-			}
-		});
+		// Reset or create new timer
+		if (this.chatBubbleTimer) {
+			this.chatBubbleTimer.remove();
+		}
+		this.chatBubbleTimer = this.scene.time.delayedCall(5000, this.removeChatBubble, [], this);
+	}
+
+	private removeChatBubble() {
+		if (this.chatBubble) {
+			this.chatBubble.destroy();
+			this.chatBubble = null;
+		}
+		this.usernameText.setVisible(true);
+		this.chatBubbleTimer = null;
 	}
 }
