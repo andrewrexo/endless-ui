@@ -3,6 +3,7 @@ import { Scene } from 'phaser';
 import { MapRenderer } from '../render/map';
 import { centerX as scaleCenterX, centerY as scaleCenterY } from '../scale';
 import { PlayerSprite } from '../entities/player-sprite';
+import { ChatBubble } from '../entities/chat-bubble';
 
 export class Game extends Scene {
 	map!: MapRenderer;
@@ -40,6 +41,7 @@ export class Game extends Scene {
 
 		EventBus.emit('current-scene-ready', this);
 		EventBus.on('tile-clicked', this.handleTileClick, this);
+		EventBus.on('chatbox:send', this.sendMessage.bind(this));
 	}
 
 	update(time: number, delta: number) {
@@ -104,6 +106,11 @@ export class Game extends Scene {
 			const pos = this.map.getTilePosition(this.player.tileX, this.player.tileY);
 			this.player.setPosition(Math.round(pos.x), Math.round(pos.y - this.player.offsetY));
 		}
+	}
+
+	sendMessage(message: string) {
+		console.log(message);
+		this.player.showChatBubble(message);
 	}
 
 	changeScene() {

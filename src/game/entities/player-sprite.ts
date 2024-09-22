@@ -1,4 +1,5 @@
 import { Scene, GameObjects, Math as PhaserMath } from 'phaser';
+import { ChatBubble } from './chat-bubble';
 
 export class PlayerSprite extends GameObjects.Container {
 	tileX: number = 0;
@@ -11,6 +12,7 @@ export class PlayerSprite extends GameObjects.Container {
 	direction: 'up' | 'down' | 'left' | 'right' = 'down';
 	offsetY: number = 16;
 	isShooting: boolean = false;
+	username: string;
 
 	private usernameText: GameObjects.Text;
 	private playerSprite: GameObjects.Sprite;
@@ -27,10 +29,12 @@ export class PlayerSprite extends GameObjects.Container {
 	};
 
 	private particles: Phaser.GameObjects.Particles.ParticleEmitter;
+	private chatBubble: ChatBubble | null = null;
 
 	constructor(scene: Scene, x: number, y: number, username: string) {
 		super(scene, x, y);
 		scene.add.existing(this);
+		this.username = username;
 
 		this.playerSprite = scene.add.sprite(x, y, 'player', 1);
 		this.add(this.playerSprite);
@@ -320,6 +324,30 @@ export class PlayerSprite extends GameObjects.Container {
 			frames: this.scene.anims.generateFrameNumbers('player', { start: 22, end: 22 }),
 			frameRate: 10,
 			repeat: 0
+		});
+	}
+
+	showChatBubble(message: string) {
+		if (this.chatBubble) {
+			this.chatBubble.destroy();
+		}
+
+		const bubbleX = 0;
+		const bubbleY = -this.playerSprite.height + 2;
+
+		this.chatBubble = new ChatBubble(this.scene, bubbleX, bubbleY, message);
+		this.add(this.chatBubble);
+
+		// hide username text cause it looks ugly with too much visible
+		this.usernameText.setVisible(false);
+
+		// Auto-destroy after 5 seconds
+		this.scene.time.delayedCall(5000, () => {
+			if (this.chatBubble) {
+				this.usernameText.setVisible(true);
+				this.chatBubble.destroy();
+				this.chatBubble = null;
+			}
 		});
 	}
 }
