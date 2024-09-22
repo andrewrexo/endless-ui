@@ -9,6 +9,7 @@ export class Game extends Scene {
 	cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
 	player!: PlayerSprite;
 	currentPath: { x: number; y: number }[] = [];
+	private shootKey!: Phaser.Input.Keyboard.Key;
 
 	constructor() {
 		super('Game');
@@ -35,6 +36,7 @@ export class Game extends Scene {
 		this.scene.launch('NativeUI');
 
 		this.cursors = this.input.keyboard!.createCursorKeys();
+		this.shootKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
 		EventBus.emit('current-scene-ready', this);
 		EventBus.on('tile-clicked', this.handleTileClick, this);
@@ -44,6 +46,7 @@ export class Game extends Scene {
 		this.handlePlayerInput();
 		this.updatePlayerMovement();
 		this.updatePlayerPath();
+		this.handleShooting();
 	}
 
 	handleTileClick = (tile: { x: number; y: number }) => {
@@ -118,5 +121,13 @@ export class Game extends Scene {
 	destroy() {
 		EventBus.off('tile-clicked', this.handleTileClick, this);
 		// ... other cleanup code ...
+	}
+
+	handleShooting() {
+		if (this.shootKey.isDown) {
+			this.player.shoot();
+		} else if (this.player.isShooting) {
+			this.player.stopShooting();
+		}
 	}
 }

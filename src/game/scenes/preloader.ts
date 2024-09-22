@@ -42,8 +42,8 @@ export class Preloader extends Scene {
 		this.load.image('boxTexture', 'paper-bg.png');
 		this.load.image('tile', 'tile.png');
 		this.load.image('tile-hover', 'tile-hover.png');
-		// Add this line to load the player spritesheet
 		this.load.spritesheet('player', 'template-front-all.png', { frameWidth: 32, frameHeight: 32 });
+		this.load.image('pixel', 'pixel.png');
 	}
 
 	create() {
