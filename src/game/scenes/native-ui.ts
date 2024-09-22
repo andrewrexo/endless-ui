@@ -34,7 +34,7 @@ export class NativeUI extends Phaser.Scene {
 		const { x, y } = this.bottomLeft(this.chatBox);
 
 		this.chatBox.setPosition(x, y);
-		this.add.existing(this.chatBox).setVisible(true);
+		this.add.existing(this.chatBox).setVisible(false);
 	}
 
 	resize() {
