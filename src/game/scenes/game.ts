@@ -137,6 +137,15 @@ export class Game extends Scene {
 	}
 
 	updatePlayerMovement() {
+		if (!this.player.isMoving) {
+			if (!this.player.isAttacking && !this.player.isIdling) {
+				this.player.isIdling = true;
+				this.player.playIdleAnimation();
+			}
+
+			return;
+		}
+
 		this.player.updateMovement(this.map.tileWidth);
 
 		if (this.player.isMoving) {

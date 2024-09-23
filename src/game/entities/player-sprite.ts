@@ -12,13 +12,14 @@ export class PlayerSprite extends GameObjects.Container {
 	direction: 'up' | 'down' | 'left' | 'right' = 'down';
 	offsetY: number;
 	isShooting: boolean = false;
+	isIdling: boolean = false;
+	isAttacking: boolean = false;
 	username: string;
 
 	private usernameText: GameObjects.Text;
 	private playerSprite: GameObjects.Sprite;
 	private lastAttackTime: number = 0;
 	private attackCooldown: number = 300; // ms
-	private isAttacking: boolean = false;
 	private isAnimationPlaying: boolean = false;
 	private currentAnimation: string = '';
 	private animationMap = {
@@ -27,7 +28,6 @@ export class PlayerSprite extends GameObjects.Container {
 		left: { idle: 'player-idle-rear', attack: 'player-attack-rear' },
 		right: { idle: 'player-idle-front', attack: 'player-attack-front' }
 	};
-
 	private particles: Phaser.GameObjects.Particles.ParticleEmitter;
 	private chatBubble: ChatBubble | null = null;
 	private chatBubbleTimer: Phaser.Time.TimerEvent | null = null;
@@ -53,11 +53,12 @@ export class PlayerSprite extends GameObjects.Container {
 		});
 
 		this.usernameText.setResolution(10);
+		this.usernameText.setDepth(3);
 		this.usernameText.setPosition(
 			-this.playerSprite.getBounds().width / 2 + 4,
 			this.playerSprite.y - 32
 		);
-		this.usernameText.setDepth(3);
+
 		this.add(this.usernameText);
 
 		// Create particle emitter
@@ -70,6 +71,7 @@ export class PlayerSprite extends GameObjects.Container {
 			emitting: false,
 			tint: 0xffff00
 		});
+
 		this.particles.setDepth(4);
 
 		this.offsetY = tileHeight / 4; // Set offset to 1/4 of tile height
@@ -105,16 +107,10 @@ export class PlayerSprite extends GameObjects.Container {
 	}
 
 	updateMovement(tileWidth: number) {
-		if (!this.isMoving) {
-			if (!this.isAttacking) {
-				this.playIdleAnimation();
-			}
-			return;
-		}
-
 		this.movementProgress += this.moveSpeed;
 
 		if (this.movementProgress >= tileWidth) {
+			this.isIdling = false;
 			this.tileX = this.targetTileX;
 			this.tileY = this.targetTileY;
 			this.x = this.tileX * tileWidth;
@@ -175,14 +171,14 @@ export class PlayerSprite extends GameObjects.Container {
 			key: 'player-idle-rear',
 			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 8, end: 8 }),
 			frameRate: 1,
-			repeat: -1
+			repeat: -1 // Set to -1 for infinite repeat
 		});
 
 		this.scene.anims.create({
 			key: 'player-idle-front',
 			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 0, end: 0 }),
 			frameRate: 1,
-			repeat: -1
+			repeat: -1 // Set to -1 for infinite repeat
 		});
 
 		this.scene.anims.create({
