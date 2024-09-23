@@ -9,13 +9,14 @@ import { NativeUI } from './scenes/native-ui';
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config: Phaser.Types.Core.GameConfig = {
 	type: AUTO,
-	width: 640,
-	height: 480,
+	width: 800,
+	height: 600,
+	parent: 'game-container',
 	scale: {
-		width: 640,
-		height: 480,
-		parent: 'game-container',
-		autoRound: true
+		width: 800,
+		height: 600,
+		autoRound: true,
+		parent: 'game-container'
 	},
 	zoom: 1,
 	backgroundColor: '#000',
