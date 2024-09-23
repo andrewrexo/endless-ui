@@ -6,7 +6,7 @@ import { PlayerSprite } from '../entities/player-sprite';
 import { ChatBubble } from '../entities/chat-bubble';
 
 export class Game extends Scene {
-	map!: MapRenderer;
+	map!: MapRenderer; // Add the '!' to fix the initialization error
 	cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
 	player!: PlayerSprite;
 	currentPath: { x: number; y: number }[] = [];
@@ -17,21 +17,27 @@ export class Game extends Scene {
 	}
 
 	create() {
-		// Draw map
-		this.map = new MapRenderer(this, this.centerX(), this.centerY());
-		this.map.drawMap();
+		// Create and initialize the map
+		this.map = new MapRenderer(this, 0, 0);
+		this.map.create();
 
-		// Create player
+		// Create player at the (0, 0) tile position
 		const startPos = this.map.getTilePosition(0, 0);
 		const username = 'drei'; // Replace with actual username retrieval
 
-		this.player = new PlayerSprite(this, startPos.x, startPos.y - 16, username);
+		this.player = new PlayerSprite(this, startPos.x, startPos.y, username, this.map.tileHeight);
+
+		// Adjust the player's initial position to be centered on the tile
+		this.player.setPosition(startPos.x, startPos.y - this.player.offsetY);
 
 		// Set up camera
 		this.cameras.main.setZoom(1);
-		this.cameras.main.startFollow(this.player, false);
+		this.cameras.main.startFollow(this.player, true);
 		this.cameras.main.setRoundPixels(true);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
+
+		// Remove any camera offset adjustment
+		// this.cameras.main.setFollowOffset(0, 0);
 
 		// Render UI
 		this.scene.launch('NativeUI');
@@ -39,32 +45,60 @@ export class Game extends Scene {
 		this.cursors = this.input.keyboard!.createCursorKeys();
 		this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
+		// Remove the existing EventBus listener and add it directly to the map
+		// EventBus.on('tile-clicked', this.handleTileClick, this);
+		this.map.on('tileclick', this.handleTileClick, this);
+
 		EventBus.emit('current-scene-ready', this);
-		EventBus.on('tile-clicked', this.handleTileClick, this);
 		EventBus.on('chatbox:send', this.sendMessage.bind(this));
 	}
 
 	update(time: number, delta: number) {
+		if (
+			this.map.activeTile &&
+			this.map.activeTile.x === this.player.tileX &&
+			this.map.activeTile.y === this.player.tileY
+		) {
+			this.map.emit('navigationend');
+		}
+
 		this.handlePlayerInput();
 		this.updatePlayerMovement();
-		this.updatePlayerPath();
+		if (!this.player.isMoving) {
+			this.movePlayerAlongPath();
+		}
 		this.handleShooting();
 	}
 
 	handleTileClick = (tile: { x: number; y: number }) => {
-		if (this.player.isMoving) return;
+		console.log('Tile clicked:', tile);
+		if (this.player.isMoving) {
+			console.log('Player is already moving, ignoring click');
+			return;
+		}
 
-		const path = this.map.findPath(this.player.tileX, this.player.tileY, tile.x, tile.y);
+		const startX = Math.floor(this.player.tileX);
+		const startY = Math.floor(this.player.tileY);
+		const endX = Math.floor(tile.x);
+		const endY = Math.floor(tile.y);
+
+		const path = this.map.findPath(startX, startY, endX, endY);
+		console.log('Path found:', path);
 		if (path.length > 1) {
 			this.currentPath = path.slice(1); // Remove the first element (current position)
+			console.log('Setting current path:', this.currentPath);
+			this.movePlayerAlongPath();
+		} else {
+			console.log('No valid path found');
 		}
 	};
 
-	updatePlayerPath() {
+	movePlayerAlongPath() {
 		if (this.currentPath.length > 0 && !this.player.isMoving) {
 			const nextTile = this.currentPath[0];
-			const dx = nextTile.x - this.player.tileX;
-			const dy = nextTile.y - this.player.tileY;
+			console.log('Moving to next tile:', nextTile);
+			const dx = Math.floor(nextTile.x - this.player.tileX);
+			const dy = Math.floor(nextTile.y - this.player.tileY);
 			this.player.startMovement(dx, dy);
 			this.currentPath.shift();
 		}

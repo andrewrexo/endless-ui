@@ -1,6 +1,6 @@
 import { Scene } from 'phaser';
 
-export class Preloader extends Scene {
+export default class Preloader extends Scene {
 	bar!: Phaser.GameObjects.Rectangle;
 	text!: Phaser.GameObjects.Text;
 	progress: number = 0;
@@ -9,7 +9,7 @@ export class Preloader extends Scene {
 		super('Preloader');
 	}
 
-	init() {
+	init(): void {
 		this.add.image(this.scale.width / 2, this.scale.height / 2, 'background-2');
 		this.add
 			.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width / 2, 32)
@@ -36,7 +36,7 @@ export class Preloader extends Scene {
 		});
 	}
 
-	preload() {
+	preload(): void {
 		this.load.setPath('assets');
 		this.load.image('logo', 'logo.png');
 		this.load.image('boxTexture', 'paper-bg.png');
@@ -47,9 +47,12 @@ export class Preloader extends Scene {
 		this.load.spritesheet('fighter', 'fighter.png', { frameWidth: 32, frameHeight: 32 });
 		this.load.spritesheet('player', 'template-front-all.png', { frameWidth: 32, frameHeight: 32 });
 		this.load.spritesheet('tiles', 'tiles.png', { frameWidth: 64, frameHeight: 32 });
+
+		// Load the tilemap JSON
+		this.load.tilemapTiledJSON('map-1', 'maps/1.json');
 	}
 
-	create() {
+	create(): void {
 		// Create a black rectangle covering the entire screen
 		const fadeRect = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000);
 		fadeRect.setOrigin(0, 0);
@@ -66,7 +69,7 @@ export class Preloader extends Scene {
 			moveBelow: true,
 			onUpdate: (progress: number) => {
 				// Fade out the black rectangle
-				fadeRect.setAlpha(0 + progress);
+				fadeRect.setAlpha(1 - progress);
 			}
 		});
 	}

@@ -1,8 +1,8 @@
 import { Boot } from './scenes/boot';
-import { Game as MainGame } from './scenes/game';
+import { Game as GameScene } from './scenes/game';
 import { MainMenu } from './scenes/main-menu';
 import { AUTO, CANVAS, Game, WEBGL } from 'phaser';
-import { Preloader } from './scenes/preloader';
+import Preloader from './scenes/preloader';
 import { NativeUI } from './scenes/native-ui';
 
 //  Find out more information about the Game Config at:
@@ -17,9 +17,9 @@ const config: Phaser.Types.Core.GameConfig = {
 		parent: 'game-container',
 		autoRound: true
 	},
-	zoom: 1.5,
+	zoom: 1,
 	backgroundColor: '#000',
-	scene: [Boot, Preloader, MainMenu, MainGame, NativeUI],
+	scene: [Boot, Preloader, MainMenu, GameScene, NativeUI],
 	render: {
 		powerPreference: 'high-performance',
 		antialias: false,
