@@ -47,6 +47,7 @@ export default class Preloader extends Scene {
 		this.load.spritesheet('fighter', 'fighter.png', { frameWidth: 32, frameHeight: 32 });
 		this.load.spritesheet('player', 'template-front-all.png', { frameWidth: 32, frameHeight: 32 });
 		this.load.spritesheet('mage', 'mage.png', { frameWidth: 32, frameHeight: 32 });
+		this.load.spritesheet('cleric', 'cleric.png', { frameWidth: 32, frameHeight: 32 });
 		this.load.spritesheet('tiles', 'tiles.png', { frameWidth: 64, frameHeight: 32 });
 
 		// Load the tilemap JSON

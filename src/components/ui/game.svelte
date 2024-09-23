@@ -50,9 +50,7 @@
 	bind:this={uiContainer}
 	in:fade={{ duration: 500 }}
 >
-	<div class="self-end m-2 pointer-events-auto">
-		<span class="text-white text-xl select-none">connected: {$page.url.host}</span>
-	</div>
+	<div class="self-end m-2 pointer-events-auto"></div>
 	<div class="w-[370px] self-start m-2 pointer-events-auto">
 		<input
 			bind:this={chatboxInput}

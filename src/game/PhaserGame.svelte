@@ -3,8 +3,9 @@
 	import { EventBus } from './event-bus';
 	import StartGame from './main';
 	import UI from '../components/ui/game.svelte';
+	import type { Scene } from 'phaser';
 
-	let { phaserRef = $bindable() }: { phaserRef: TPhaserRef } = $props();
+	let { phaserRef = $bindable() }: { phaserRef: { game: Phaser.Game; scene: Scene } } = $props();
 
 	const currentScene = (scene: Scene) => {
 		const isGameScene = scene.scene.key === 'Game';

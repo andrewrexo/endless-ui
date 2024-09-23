@@ -31,13 +31,16 @@ export class Game extends Scene {
 
 		const mapWidth = this.map.mapWidth;
 		const mapHeight = this.map.mapHeight;
-		const centerTileX = Math.floor(mapWidth / 2) - 1;
-		const centerTileY = Math.floor(mapHeight / 2) - 1;
+		// const centerTileX = Math.floor(mapWidth / 2) - 1;
+		// const centerTileY = Math.floor(mapHeight / 2) - 1;
+		const centerTileX = 4;
+		const centerTileY = 3;
 
 		const startPos = this.map.layer.getTileAt(centerTileX, centerTileY);
 		const username = 'drei'; // Replace with actual username retrieval
 
 		this.player = new PlayerSprite(this, 0, 0, username, this.map.tileHeight);
+		this.player.faceDirection('left', { update: true });
 
 		// Adjust the player's initial position to be centered on the tile
 		this.player.setPosition(startPos.pixelX, startPos.pixelY - this.player.offsetY);
@@ -49,7 +52,7 @@ export class Game extends Scene {
 
 		// Set up camera
 		this.cameras.main.setZoom(1);
-		this.cameras.main.startFollow(this.player, true);
+		this.cameras.main.startFollow(this.player, true, 0.9, 0.9);
 		this.cameras.main.setRoundPixels(true);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
 
@@ -61,7 +64,9 @@ export class Game extends Scene {
 
 		this.map.on('tileclick', this.handleTileClick, this);
 
-		this.createNPC('mage', 0, 1, 'Ghost');
+		this.createNPC('mage', 2, 2, 'Mage');
+		this.createNPC('fighter', 2, 3, 'Fighter');
+		this.createNPC('cleric', 2, 4, 'Cleric');
 
 		EventBus.emit('current-scene-ready', this);
 		EventBus.on('chatbox:send', this.sendMessage.bind(this));

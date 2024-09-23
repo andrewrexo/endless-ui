@@ -15,19 +15,17 @@ const config: Phaser.Types.Core.GameConfig = {
 	scale: {
 		width: 800,
 		height: 600,
-		autoRound: true,
 		parent: 'game-container'
 	},
+
 	zoom: 1,
 	backgroundColor: '#000',
 	scene: [Boot, Preloader, MainMenu, GameScene, NativeUI],
 	render: {
 		powerPreference: 'high-performance',
-		antialias: false,
-		antialiasGL: false,
-		pixelArt: true
+		pixelArt: true,
+		roundPixels: true
 	},
-	roundPixels: true,
 	input: {
 		windowEvents: false
 	},
@@ -35,7 +33,7 @@ const config: Phaser.Types.Core.GameConfig = {
 		default: 'arcade',
 		arcade: {
 			gravity: { x: 0, y: 300 },
-			debug: false
+			debug: true
 		}
 	}
 };

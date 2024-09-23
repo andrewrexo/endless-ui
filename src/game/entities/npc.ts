@@ -23,7 +23,7 @@ export class NPC extends GameObjects.Container {
 		// Create border sprite
 		this.borderSprite = scene.add.sprite(0, 0, key);
 		this.borderSprite.setTintFill(0xffffff);
-		this.borderSprite.setScale(1.05);
+		this.borderSprite.setScale(1.2);
 		this.borderSprite.setVisible(false);
 		this.add(this.borderSprite);
 
@@ -32,29 +32,28 @@ export class NPC extends GameObjects.Container {
 		this.add(this.sprite);
 
 		// Create name text
-		this.nameText = scene.add.text(0, -30, name, {
+		this.nameText = scene.add.text(0, -24, name, {
 			fontSize: '16px',
-			color: '#ffffff',
+			color: '#000000',
 			fontFamily: 'Monogram',
-			stroke: '#000000',
+			stroke: '#ffffff',
 			strokeThickness: 2,
 			align: 'center'
 		});
 
-		this.nameText.setResolution(5);
+		this.nameText.setResolution(10);
 		this.nameText.setOrigin(0.5);
 		this.add(this.nameText);
+		this.nameText.setVisible(false);
 
 		this.sprite.setInteractive();
 		this.sprite.on('pointerover', () => {
 			this.borderSprite.setVisible(true);
-			this.nameText.setStroke('#D3D3D3', 4); // Add light gray stroke on hover
-			this.nameText.setColor('#000000');
+			this.nameText.setVisible(true);
 		});
 		this.sprite.on('pointerout', () => {
 			this.borderSprite.setVisible(false);
-			this.nameText.setColor('#ffffff');
-			this.nameText.setStroke('#000000', 2); // Reset to original stroke on pointer out
+			this.nameText.setVisible(false);
 		});
 
 		// Set Position
