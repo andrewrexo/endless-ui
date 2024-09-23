@@ -125,15 +125,15 @@
 
 	.bottom-left input {
 		width: 100%;
-		height: 1rem;
+		height: 1.25rem;
 		border: 1px solid #ccc;
 		border-radius: 0.25rem;
 		padding: 0.25rem 0.5rem;
 		font-family: 'Monogram';
 		font-size: 16px;
-		color: white;
-		background: #000;
-		box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+		color: black;
+		background: #eee;
+		box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.5);
 	}
 
 	.bottom-left input:focus {
@@ -142,7 +142,7 @@
 	}
 
 	.bottom-left input::placeholder {
-		color: #ccc;
+		color: #aaa;
 	}
 
 	.status-text {

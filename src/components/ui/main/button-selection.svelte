@@ -30,6 +30,7 @@
 				if (button.event) EventBus.emit(button.event);
 			}}
 			transition:fly={{ y: -100, duration: 200, delay: index * 100 }}
+			class="icon-container"
 		>
 			{@render button.icon()}
 		</button>
@@ -38,17 +39,24 @@
 
 <style>
 	button {
+		padding: 0.5rem;
 		width: 32px;
 		height: 32px;
 		outline: none;
 		border: none;
-		background: url('/assets/ui/button.png') 64px 0;
-		color: #8b4513;
+		font-size: 16px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #333;
+		border: 1px solid #ccc;
+		background: #eee;
+		border-radius: 0.25rem;
+		box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.5);
+		cursor: pointer;
 	}
 
 	button:hover {
-		background: url('/assets/ui/button.png') 96px 0;
-		opacity: 0.9;
-		padding: 6px;
+		translate: 0 2px;
 	}
 </style>
