@@ -10,7 +10,7 @@ export class PlayerSprite extends GameObjects.Container {
 	targetTileY: number = 0;
 	movementProgress: number = 0;
 	direction: 'up' | 'down' | 'left' | 'right' = 'down';
-	offsetY: number = 16;
+	offsetY: number;
 	isShooting: boolean = false;
 	username: string;
 
@@ -32,7 +32,7 @@ export class PlayerSprite extends GameObjects.Container {
 	private chatBubble: ChatBubble | null = null;
 	private chatBubbleTimer: Phaser.Time.TimerEvent | null = null;
 
-	constructor(scene: Scene, x: number, y: number, username: string) {
+	constructor(scene: Scene, x: number, y: number, username: string, tileHeight: number) {
 		super(scene, x, y);
 		scene.add.existing(this);
 		this.username = username;
@@ -42,21 +42,22 @@ export class PlayerSprite extends GameObjects.Container {
 		this.createAnimations();
 		this.playIdleAnimation();
 		this.playerSprite.setDepth(3);
-		this.playerSprite.setOrigin(0.5, 0.25);
 		// Create username text
 		this.usernameText = scene.add.text(this.playerSprite.x, this.playerSprite.y, username, {
 			fontSize: '16px',
 			color: '#ffffff',
 			fontFamily: 'Monogram',
 			stroke: '#000000',
-			strokeThickness: 5
+			strokeThickness: 2,
+			align: 'center'
 		});
 
 		this.usernameText.setResolution(10);
-		this.usernameText.setOrigin(0.5, 1);
-		this.usernameText.setPosition(0, -32);
+		this.usernameText.setPosition(
+			-this.playerSprite.getBounds().width / 2 + 4,
+			this.playerSprite.y - 32
+		);
 		this.usernameText.setDepth(3);
-		this.playerSprite.setScale(2);
 		this.add(this.usernameText);
 
 		// Create particle emitter
@@ -70,6 +71,8 @@ export class PlayerSprite extends GameObjects.Container {
 			tint: 0xffff00
 		});
 		this.particles.setDepth(4);
+
+		this.offsetY = tileHeight / 4; // Set offset to 1/4 of tile height
 	}
 
 	startMovement(dx: number, dy: number) {
@@ -227,7 +230,7 @@ export class PlayerSprite extends GameObjects.Container {
 		} else {
 			// Create new chat bubble
 			const bubbleX = 0;
-			const bubbleY = -this.playerSprite.height - 4;
+			const bubbleY = -16;
 			this.chatBubble = new ChatBubble(this.scene, bubbleX, bubbleY, message);
 			this.add(this.chatBubble);
 		}
