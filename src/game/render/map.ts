@@ -86,6 +86,8 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		const worldPoint = pointer.positionToCamera(this.scene.cameras.main) as Phaser.Math.Vector2;
 		const tile = this.layer.getIsoTileAtWorldXY(worldPoint.x, worldPoint.y);
 
+		if (!tile) return;
+
 		console.log('Clicked world position:', worldPoint.x, worldPoint.y);
 		console.log('Calculated tile:', tile);
 
