@@ -1,8 +1,15 @@
+<script lang="ts">
+	import '../app.css';
+	let { children } = $props();
+</script>
+
 <svelte:head>
-	<title>Endless UI Demo</title>
+	<title>Hometown</title>
 </svelte:head>
 
-<slot />
+<main class="flex flex-col items-center justify-center h-screen">
+	{@render children()}
+</main>
 
 <style>
 	:global(body) {
