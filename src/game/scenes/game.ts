@@ -4,6 +4,7 @@ import { MapRenderer } from '../render/map';
 import { centerX as scaleCenterX, centerY as scaleCenterY } from '../scale';
 import { PlayerSprite } from '../entities/player-sprite';
 import { ChatBubble } from '../entities/chat-bubble';
+import { NPC } from '../entities/npc';
 
 export class Game extends Scene {
 	map!: MapRenderer; // Add the '!' to fix the initialization error
@@ -14,6 +15,10 @@ export class Game extends Scene {
 	private pendingDestination: { x: number; y: number } | null = null;
 	private keyPressStartTime: number = 0;
 	private keyPressThreshold: number = 80; // milliseconds
+	private npcs: NPC[] = [];
+	private inputEnabled: boolean = true;
+	private isAttackKeyDown: boolean = false;
+	private lastAttackTime: number = 0;
 
 	constructor() {
 		super('Game');
@@ -29,7 +34,6 @@ export class Game extends Scene {
 		const username = 'drei'; // Replace with actual username retrieval
 
 		this.player = new PlayerSprite(this, startPos.x, startPos.y, username, this.map.tileHeight);
-
 		// Adjust the player's initial position to be centered on the tile
 		this.player.setPosition(startPos.x, startPos.y - this.player.offsetY);
 
@@ -52,8 +56,38 @@ export class Game extends Scene {
 		// EventBus.on('tile-clicked', this.handleTileClick, this);
 		this.map.on('tileclick', this.handleTileClick, this);
 
+		this.createNPC('fighter', 0, 1, 'Ghost');
+
 		EventBus.emit('current-scene-ready', this);
 		EventBus.on('chatbox:send', this.sendMessage.bind(this));
+
+		// Add event listeners for window focus and blur
+		window.addEventListener('focus', this.onWindowFocus.bind(this));
+		window.addEventListener('blur', this.onWindowBlur.bind(this));
+	}
+
+	onWindowFocus() {
+		this.inputEnabled = true;
+		this.input.keyboard!.enabled = true;
+		// Reset player state
+		this.player.isMoving = false;
+		this.player.isIdling = false;
+		this.player.playIdleAnimation();
+	}
+
+	onWindowBlur() {
+		this.inputEnabled = false;
+		this.input.keyboard!.enabled = false;
+		// Stop any ongoing player movement
+		this.player.isMoving = false;
+		this.currentPath = [];
+		this.pendingDestination = null;
+	}
+
+	createNPC(spriteKey: string, tileX: number, tileY: number, name: string) {
+		const npc = new NPC(this, spriteKey, tileX, tileY, name, this.map);
+		this.npcs.push(npc);
+		return npc;
 	}
 
 	update(time: number, delta: number) {
@@ -65,12 +99,16 @@ export class Game extends Scene {
 			this.map.emit('navigationend');
 		}
 
-		this.handlePlayerInput(time);
-		this.updatePlayerMovement();
-		if (!this.player.isMoving) {
-			this.movePlayerAlongPath();
+		if (this.inputEnabled) {
+			this.handlePlayerInput(time);
+			this.updatePlayerMovement();
+			if (!this.player.isMoving) {
+				this.movePlayerAlongPath();
+			}
+			this.handleShooting();
 		}
-		this.handleShooting();
+
+		this.npcs.forEach((npc) => npc.update());
 	}
 
 	handleTileClick = (tile: { x: number; y: number }) => {
@@ -119,7 +157,7 @@ export class Game extends Scene {
 	}
 
 	handlePlayerInput(time: number) {
-		if (this.player.isMoving || this.currentPath.length > 0) return;
+		if (!this.inputEnabled || this.player.isMoving || this.currentPath.length > 0) return;
 
 		let dx = 0;
 		let dy = 0;
@@ -220,11 +258,16 @@ export class Game extends Scene {
 	destroy() {
 		EventBus.off('tile-clicked', this.handleTileClick, this);
 		// ... other cleanup code ...
+		window.removeEventListener('focus', this.onWindowFocus);
+		window.removeEventListener('blur', this.onWindowBlur);
 	}
 
 	handleShooting() {
+		const currentTime = this.time.now;
 		if (this.attackKey.isDown) {
-			this.player.attack();
+			if (currentTime - this.lastAttackTime >= this.player.attackCooldown) {
+				this.player.attack();
+			}
 		}
 	}
 }

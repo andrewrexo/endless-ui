@@ -5,6 +5,7 @@ export class PlayerSprite extends GameObjects.Container {
 	tileX: number = 0;
 	tileY: number = 0;
 	moveSpeed: number = 2; // Pixels per frame
+	attackCooldown: number = 600;
 	isMoving: boolean = false;
 	targetTileX: number = 0;
 	targetTileY: number = 0;
@@ -19,7 +20,6 @@ export class PlayerSprite extends GameObjects.Container {
 	private usernameText: GameObjects.Text;
 	private playerSprite: GameObjects.Sprite;
 	private lastAttackTime: number = 0;
-	private attackCooldown: number = 300; // ms
 	private isAnimationPlaying: boolean = false;
 	private currentAnimation: string = '';
 	private animationMap = {
@@ -141,6 +141,7 @@ export class PlayerSprite extends GameObjects.Container {
 		if (!this.canAttack()) return;
 		this.isAttacking = true;
 		this.lastAttackTime = this.scene.time.now;
+
 		this.playAttackAnimation();
 	}
 
@@ -155,12 +156,20 @@ export class PlayerSprite extends GameObjects.Container {
 	private playAnimation(key: string, onComplete?: () => void) {
 		console.log('Playing animation:', key);
 		if (!key) return;
-		if (this.currentAnimation !== key) {
-			this.currentAnimation = key;
-			this.playerSprite.play(key);
-			if (onComplete) {
-				this.playerSprite.once('animationcomplete', onComplete);
-			}
+
+		// Stop any current animation
+		this.playerSprite.stop();
+
+		// Reset the sprite to the first frame of the new animation
+		const animationConfig = this.scene.anims.get(key);
+		if (animationConfig) {
+			this.playerSprite.setFrame(animationConfig.frames[0].frame.name);
+		}
+
+		this.currentAnimation = key;
+		this.playerSprite.play(key);
+		if (onComplete) {
+			this.playerSprite.once('animationcomplete', onComplete);
 		}
 	}
 
@@ -182,28 +191,28 @@ export class PlayerSprite extends GameObjects.Container {
 		this.scene.anims.create({
 			key: 'player-walk-down',
 			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 0, end: 7 }),
-			frameRate: 10,
+			duration: 600,
 			repeat: -1
 		});
 
 		this.scene.anims.create({
 			key: 'player-walk-up',
 			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 8, end: 15 }),
-			frameRate: 10,
+			duration: 600,
 			repeat: -1
 		});
 
 		this.scene.anims.create({
 			key: 'player-walk-left',
 			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 8, end: 15 }),
-			frameRate: 10,
+			duration: 600,
 			repeat: -1
 		});
 
 		this.scene.anims.create({
 			key: 'player-walk-right',
 			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 0, end: 7 }),
-			frameRate: 10,
+			duration: 600,
 			repeat: -1
 		});
 
