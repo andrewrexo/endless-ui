@@ -36,6 +36,7 @@ export class Game extends Scene {
 		this.player = new PlayerSprite(this, startPos.x, startPos.y, username, this.map.tileHeight);
 		// Adjust the player's initial position to be centered on the tile
 		this.player.setPosition(startPos.x, startPos.y - this.player.offsetY);
+		this.player.setDepth(this.player.tileY + 1);
 
 		// Set up camera
 		this.cameras.main.setZoom(1);
@@ -56,7 +57,7 @@ export class Game extends Scene {
 		// EventBus.on('tile-clicked', this.handleTileClick, this);
 		this.map.on('tileclick', this.handleTileClick, this);
 
-		this.createNPC('fighter', 0, 1, 'Ghost');
+		this.createNPC('mage', 0, 1, 'Ghost');
 
 		EventBus.emit('current-scene-ready', this);
 		EventBus.on('chatbox:send', this.sendMessage.bind(this));

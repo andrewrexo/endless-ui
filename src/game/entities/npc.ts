@@ -3,6 +3,7 @@ import { MapRenderer } from '../render/map';
 
 export class NPC extends GameObjects.Container {
 	private sprite: GameObjects.Sprite;
+	private borderSprite: GameObjects.Sprite;
 	private nameText: GameObjects.Text;
 	public tileX: number;
 	public tileY: number;
@@ -19,8 +20,14 @@ export class NPC extends GameObjects.Container {
 
 		this.tileX = tileX;
 		this.tileY = tileY;
+		// Create border sprite
+		this.borderSprite = scene.add.sprite(0, 0, key);
+		this.borderSprite.setTintFill(0xffffff);
+		this.borderSprite.setScale(1.05);
+		this.borderSprite.setVisible(false);
+		this.add(this.borderSprite);
 
-		// Create sprite
+		// Create main sprite
 		this.sprite = scene.add.sprite(0, 0, key);
 		this.add(this.sprite);
 
@@ -40,32 +47,16 @@ export class NPC extends GameObjects.Container {
 
 		this.sprite.setInteractive();
 		this.sprite.on('pointerover', () => {
-			// Create a border graphics object
-			const border = this.scene.add.graphics();
-			border.lineStyle(1, 0xffffff, 1);
-
-			// Calculate the border rectangle
-			const bounds = this.sprite.getBounds();
-			const borderRect = new Phaser.Geom.Rectangle(
-				-Math.floor(bounds.width / 2) - 1,
-				-Math.floor(bounds.height / 2) - 1,
-				Math.floor(bounds.width) + 2,
-				Math.floor(bounds.height) + 2
-			);
-
-			// Draw the border
-			border.strokeRect(borderRect.x, borderRect.y, borderRect.width, borderRect.height);
-
-			// Add the border to the container and set it behind the sprite
-			this.add(border);
-			this.sendToBack(border);
-
-			// Hide the border initially
-			border.setVisible(false);
-
-			// Show the border on pointer over
-			border.setVisible(true);
+			this.borderSprite.setVisible(true);
+			this.nameText.setStroke('#D3D3D3', 4); // Add light gray stroke on hover
+			this.nameText.setColor('#000000');
 		});
+		this.sprite.on('pointerout', () => {
+			this.borderSprite.setVisible(false);
+			this.nameText.setColor('#ffffff');
+			this.nameText.setStroke('#000000', 2); // Reset to original stroke on pointer out
+		});
+
 		// Set Position
 		const position = map.getTilePosition(tileX, tileY);
 		this.setPosition(position.x, position.y - 8);
@@ -76,6 +67,7 @@ export class NPC extends GameObjects.Container {
 
 	public setAnimation(key: string) {
 		this.sprite.play(key);
+		this.borderSprite.play(key);
 	}
 
 	public faceDirection(direction: 'up' | 'down' | 'left' | 'right') {
