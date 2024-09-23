@@ -29,7 +29,7 @@ export class Game extends Scene {
 
 		// Set up camera
 		this.cameras.main.setZoom(1);
-		this.cameras.main.startFollow(this.player, true);
+		this.cameras.main.startFollow(this.player, false);
 		this.cameras.main.setRoundPixels(true);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
 

@@ -3,7 +3,7 @@ import { Scene, GameObjects } from 'phaser';
 export class ChatBubble extends GameObjects.Container {
 	private background: GameObjects.Graphics;
 	private text: GameObjects.Text;
-	private padding: number = 8;
+	private padding: number = 4;
 	private maxWidth: number = 200;
 	private tailHeight: number = 4;
 
@@ -17,11 +17,11 @@ export class ChatBubble extends GameObjects.Container {
 		this.text = scene.add.text(0, 0, message, {
 			fontSize: '16px',
 			stroke: '#303030',
-			strokeThickness: 3,
+			strokeThickness: 2,
 			color: '#ffffff',
 			fontFamily: 'Monogram',
 			wordWrap: { width: this.maxWidth - this.padding * 2, useAdvancedWrap: true },
-			resolution: 10 // Changed to 1 for pixel-perfect rendering
+			resolution: 4 // Changed to 1 for pixel-perfect rendering
 		});
 
 		this.text.setOrigin(0.5);
@@ -37,12 +37,12 @@ export class ChatBubble extends GameObjects.Container {
 	private drawBubble() {
 		const width = Math.round(Math.min(this.text.width + this.padding * 2, this.maxWidth));
 		const height = Math.round(this.text.height + this.padding);
-		const cornerRadius = 4; // Rounded down from 5
-		const tailWidth = 10;
+		const cornerRadius = 6; // Rounded down from 5
+		const tailWidth = 4;
 
 		this.background.clear();
-		this.background.fillStyle(0x909090, 0.8);
-		this.background.lineStyle(1, 0x000000, 0.5);
+		this.background.fillStyle(0xffffff, 0.8);
+		this.background.lineStyle(2, 0x000000, 0.5);
 
 		// Start path for the entire bubble shape
 		this.background.beginPath();

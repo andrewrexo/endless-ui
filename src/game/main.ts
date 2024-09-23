@@ -8,16 +8,16 @@ import { NativeUI } from './scenes/native-ui';
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config: Phaser.Types.Core.GameConfig = {
-	type: WEBGL,
-	width: 800,
-	height: 600,
+	type: AUTO,
+	width: 640,
+	height: 480,
 	scale: {
-		width: 800,
-		height: 600,
+		width: 640,
+		height: 480,
 		parent: 'game-container',
-		autoRound: true,
-		zoom: 1
+		autoRound: true
 	},
+	zoom: 1.5,
 	backgroundColor: '#000',
 	scene: [Boot, Preloader, MainMenu, MainGame, NativeUI],
 	render: {
