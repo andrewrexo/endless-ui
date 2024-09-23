@@ -86,19 +86,19 @@ export class PlayerSprite extends GameObjects.Container {
 
 		let animKey = '';
 		if (dx < 0) {
-			this.direction = 'left';
+			this.faceDirection('left', { update: false });
 			animKey = 'player-walk-left';
 			this.playerSprite.setFlipX(true);
 		} else if (dx > 0) {
-			this.direction = 'right';
+			this.faceDirection('right', { update: false });
 			animKey = 'player-walk-right';
 			this.playerSprite.setFlipX(false);
 		} else if (dy < 0) {
-			this.direction = 'up';
+			this.faceDirection('up', { update: false });
 			animKey = 'player-walk-up';
 			this.playerSprite.setFlipX(false);
 		} else if (dy > 0) {
-			this.direction = 'down';
+			this.faceDirection('down', { update: false });
 			animKey = 'player-walk-down';
 			this.playerSprite.setFlipX(true);
 		}
@@ -130,9 +130,7 @@ export class PlayerSprite extends GameObjects.Container {
 	}
 
 	playIdleAnimation() {
-		const animKey = this.animationMap[this.direction].idle;
-		this.playerSprite.setFlipX(['left', 'down'].includes(this.direction));
-		this.playAnimation(animKey);
+		this.updateAnimation();
 	}
 
 	canAttack(): boolean {
@@ -253,5 +251,19 @@ export class PlayerSprite extends GameObjects.Container {
 		}
 		this.usernameText.setVisible(true);
 		this.chatBubbleTimer = null;
+	}
+
+	faceDirection(direction: 'up' | 'down' | 'left' | 'right', options: { update: boolean }) {
+		this.direction = direction;
+
+		if (options.update) {
+			this.updateAnimation();
+		}
+	}
+
+	updateAnimation() {
+		const animKey = this.animationMap[this.direction].idle;
+		this.playerSprite.setFlipX(['left', 'down'].includes(this.direction));
+		this.playAnimation(animKey);
 	}
 }

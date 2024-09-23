@@ -12,6 +12,8 @@ export class Game extends Scene {
 	currentPath: { x: number; y: number }[] = [];
 	private attackKey!: Phaser.Input.Keyboard.Key;
 	private pendingDestination: { x: number; y: number } | null = null;
+	private keyPressStartTime: number = 0;
+	private keyPressThreshold: number = 80; // milliseconds
 
 	constructor() {
 		super('Game');
@@ -63,7 +65,7 @@ export class Game extends Scene {
 			this.map.emit('navigationend');
 		}
 
-		this.handlePlayerInput();
+		this.handlePlayerInput(time);
 		this.updatePlayerMovement();
 		if (!this.player.isMoving) {
 			this.movePlayerAlongPath();
@@ -116,23 +118,48 @@ export class Game extends Scene {
 		}
 	}
 
-	handlePlayerInput() {
+	handlePlayerInput(time: number) {
 		if (this.player.isMoving || this.currentPath.length > 0) return;
 
 		let dx = 0;
 		let dy = 0;
+		let keyPressed = false;
 
-		if (this.cursors.left.isDown) dx -= 1;
-		else if (this.cursors.right.isDown) dx += 1;
-		else if (this.cursors.up.isDown) dy -= 1;
-		else if (this.cursors.down.isDown) dy += 1;
+		if (this.cursors.left.isDown) {
+			dx = -1;
+			keyPressed = true;
+		} else if (this.cursors.right.isDown) {
+			dx = 1;
+			keyPressed = true;
+		} else if (this.cursors.up.isDown) {
+			dy = -1;
+			keyPressed = true;
+		} else if (this.cursors.down.isDown) {
+			dy = 1;
+			keyPressed = true;
+		}
 
-		if (dx !== 0 || dy !== 0) {
-			const targetTileX = this.player.tileX + dx;
-			const targetTileY = this.player.tileY + dy;
-			if (this.map.isValidTile(targetTileX, targetTileY)) {
-				this.player.startMovement(dx, dy);
+		if (keyPressed) {
+			if (this.keyPressStartTime === 0) {
+				this.keyPressStartTime = time;
 			}
+
+			const keyPressDuration = time - this.keyPressStartTime;
+			const direction = dx === -1 ? 'left' : dx === 1 ? 'right' : dy === -1 ? 'up' : 'down';
+
+			if (keyPressDuration >= this.keyPressThreshold) {
+				// Key held long enough, initiate movement
+				const targetTileX = this.player.tileX + dx;
+				const targetTileY = this.player.tileY + dy;
+				if (this.map.isValidTile(targetTileX, targetTileY)) {
+					this.player.startMovement(dx, dy);
+				}
+			} else if (keyPressDuration > 10 && this.player.direction != direction) {
+				this.player.faceDirection(direction, { update: true });
+			}
+		} else {
+			// No key pressed, reset the start time
+			this.keyPressStartTime = 0;
 		}
 	}
 
