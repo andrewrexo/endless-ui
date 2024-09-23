@@ -99,13 +99,7 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		}
 
 		this.activeTile = tile;
-
-		this.scene.tweens.add({
-			targets: this.activeTile,
-			alpha: { from: 1, to: 0.7 },
-			duration: 100,
-			ease: 'Linear'
-		});
+		this.activeTile.setAlpha(0.7);
 
 		if (this.isValidTile(tile.x, tile.y)) {
 			this.emit('tileclick', tile);
