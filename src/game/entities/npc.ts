@@ -1,10 +1,13 @@
 import { Scene, GameObjects } from 'phaser';
 import { MapRenderer } from '../render/map';
+import { EventBus } from '../event-bus';
 
 export class NPC extends GameObjects.Container {
 	private sprite: GameObjects.Sprite;
 	private borderSprite: GameObjects.Sprite;
 	private nameText: GameObjects.Text;
+	private action: string;
+	private text: string;
 	public tileX: number;
 	public tileY: number;
 
@@ -17,6 +20,9 @@ export class NPC extends GameObjects.Container {
 		map: MapRenderer
 	) {
 		super(scene, 0, 0);
+
+		this.action = 'Talk to';
+		this.text = name;
 
 		this.tileX = tileX;
 		this.tileY = tileY;
@@ -50,10 +56,20 @@ export class NPC extends GameObjects.Container {
 		this.sprite.on('pointerover', () => {
 			this.borderSprite.setVisible(true);
 			this.nameText.setVisible(true);
+
+			EventBus.emit('action-text', {
+				action: this.action,
+				text: this.text
+			});
 		});
 		this.sprite.on('pointerout', () => {
 			this.borderSprite.setVisible(false);
 			this.nameText.setVisible(false);
+
+			EventBus.emit('action-text', {
+				action: '',
+				text: ''
+			});
 		});
 
 		// Set Position

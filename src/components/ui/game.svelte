@@ -3,6 +3,9 @@
 	import { page } from '$app/stores';
 	import ButtonSelection from './main/button-selection.svelte';
 	import { EventBus } from '../../game/event-bus';
+	import Forward from '../icons/forward.svelte';
+	import Chat from '../icons/chat.svelte';
+	import ActionText from './main/action-text.svelte';
 
 	let uiContainer: HTMLElement;
 	let chatboxText = $state('');
@@ -50,7 +53,7 @@
 	bind:this={uiContainer}
 	in:fade={{ duration: 500 }}
 >
-	<div class="self-end m-2 pointer-events-auto"></div>
+	<ActionText />
 	<div class="w-[370px] self-start m-2 pointer-events-auto">
 		<input
 			bind:this={chatboxInput}

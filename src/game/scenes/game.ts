@@ -76,22 +76,11 @@ export class Game extends Scene {
 		window.addEventListener('blur', this.onWindowBlur.bind(this));
 	}
 
-	onWindowFocus() {
-		this.inputEnabled = true;
-		this.input.keyboard!.enabled = true;
-		// Reset player state
-		this.player.isMoving = false;
-		this.player.isIdling = false;
-		this.player.playIdleAnimation();
-	}
+	onWindowFocus() {}
 
 	onWindowBlur() {
-		this.inputEnabled = false;
-		this.input.keyboard!.enabled = false;
-		// Stop any ongoing player movement
-		this.player.isMoving = false;
-		this.currentPath = [];
-		this.pendingDestination = null;
+		// Remove active keydown events when the window loses focus
+		this.input.keyboard?.resetKeys();
 	}
 
 	createNPC(spriteKey: string, tileX: number, tileY: number, name: string) {

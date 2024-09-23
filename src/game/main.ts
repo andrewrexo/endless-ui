@@ -15,10 +15,9 @@ const config: Phaser.Types.Core.GameConfig = {
 	scale: {
 		width: 800,
 		height: 600,
-		parent: 'game-container'
+		autoCenter: Phaser.Scale.CENTER_BOTH
 	},
-
-	zoom: 1,
+	zoom: 1.5,
 	backgroundColor: '#000',
 	scene: [Boot, Preloader, MainMenu, GameScene, NativeUI],
 	render: {
