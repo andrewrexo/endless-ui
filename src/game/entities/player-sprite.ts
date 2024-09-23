@@ -122,12 +122,15 @@ export class PlayerSprite extends GameObjects.Container {
 			this.isMoving = false;
 			this.movementProgress = 0;
 			this.isAttacking = false;
+			return true;
 		} else {
 			// Update position during movement
 			const progress = this.movementProgress / tileWidth;
 			this.x = Phaser.Math.Linear(this.tileX * tileWidth, this.targetTileX * tileWidth, progress);
 			this.y = Phaser.Math.Linear(this.tileY * tileWidth, this.targetTileY * tileWidth, progress);
 		}
+
+		return false;
 	}
 
 	playIdleAnimation() {
@@ -156,6 +159,8 @@ export class PlayerSprite extends GameObjects.Container {
 	}
 
 	private playAnimation(key: string, onComplete?: () => void) {
+		console.log('Playing animation:', key);
+		if (!key) return;
 		if (this.currentAnimation !== key) {
 			this.currentAnimation = key;
 			this.playerSprite.play(key);

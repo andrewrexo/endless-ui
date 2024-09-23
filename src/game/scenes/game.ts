@@ -11,6 +11,7 @@ export class Game extends Scene {
 	player!: PlayerSprite;
 	currentPath: { x: number; y: number }[] = [];
 	private attackKey!: Phaser.Input.Keyboard.Key;
+	private pendingDestination: { x: number; y: number } | null = null;
 
 	constructor() {
 		super('Game');
@@ -72,11 +73,17 @@ export class Game extends Scene {
 
 	handleTileClick = (tile: { x: number; y: number }) => {
 		console.log('Tile clicked:', tile);
+
 		if (this.player.isMoving) {
-			console.log('Player is already moving, ignoring click');
+			console.log('Player is moving, setting pending destination');
+			this.pendingDestination = { x: tile.x, y: tile.y };
 			return;
 		}
 
+		this.setNewDestination(tile);
+	};
+
+	setNewDestination(tile: { x: number; y: number }) {
 		const startX = Math.floor(this.player.tileX);
 		const startY = Math.floor(this.player.tileY);
 		const endX = Math.floor(tile.x);
@@ -91,7 +98,7 @@ export class Game extends Scene {
 		} else {
 			console.log('No valid path found');
 		}
-	};
+	}
 
 	movePlayerAlongPath() {
 		if (this.currentPath.length > 0 && !this.player.isMoving) {
@@ -101,6 +108,11 @@ export class Game extends Scene {
 			const dy = Math.floor(nextTile.y - this.player.tileY);
 			this.player.startMovement(dx, dy);
 			this.currentPath.shift();
+		} else if (this.currentPath.length === 0 && this.pendingDestination) {
+			console.log('Reached current destination, processing pending destination');
+			const newDestination = this.pendingDestination;
+			this.pendingDestination = null;
+			this.setNewDestination(newDestination);
 		}
 	}
 
@@ -139,6 +151,16 @@ export class Game extends Scene {
 		} else {
 			const pos = this.map.getTilePosition(this.player.tileX, this.player.tileY);
 			this.player.setPosition(Math.round(pos.x), Math.round(pos.y - this.player.offsetY));
+
+			// Check for pending destination after movement is complete
+			if (this.pendingDestination) {
+				console.log('Processing pending destination after movement');
+				const newDestination = this.pendingDestination;
+				this.pendingDestination = null;
+				this.setNewDestination(newDestination);
+			} else {
+				this.movePlayerAlongPath();
+			}
 		}
 	}
 

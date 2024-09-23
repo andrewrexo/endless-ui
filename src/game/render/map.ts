@@ -56,8 +56,10 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 			return;
 		}
 		this.layer = layer;
-		// Remove any layer position adjustment
 		this.layer.setPosition(-32, -16);
+
+		this.add(this.layer);
+		this.scene.add.existing(this);
 
 		// Set up interactivity for the entire scene
 		this.scene.input.on('pointerdown', this.onSceneClick, this);
@@ -87,21 +89,28 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		console.log('Clicked world position:', worldPoint.x, worldPoint.y);
 		console.log('Calculated tile:', tile);
 
-		if (!this.activeTile) {
-			this.activeTile = tile;
-
+		if (this.activeTile) {
 			this.scene.tweens.add({
 				targets: this.activeTile,
-				alpha: { from: 1, to: 0.7 },
+				alpha: { from: 0.7, to: 1 },
 				duration: 100,
 				ease: 'Linear'
 			});
+		}
 
-			if (this.isValidTile(tile.x, tile.y)) {
-				this.emit('tileclick', tile);
-			} else {
-				console.log('Invalid tile clicked');
-			}
+		this.activeTile = tile;
+
+		this.scene.tweens.add({
+			targets: this.activeTile,
+			alpha: { from: 1, to: 0.7 },
+			duration: 100,
+			ease: 'Linear'
+		});
+
+		if (this.isValidTile(tile.x, tile.y)) {
+			this.emit('tileclick', tile);
+		} else {
+			console.log('Invalid tile clicked');
 		}
 	}
 
@@ -154,6 +163,7 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 
 			if (current.x === end.x && current.y === end.y) {
 				const path = [];
+
 				while (current) {
 					path.push({ x: current.x, y: current.y });
 					current = current.parent;
