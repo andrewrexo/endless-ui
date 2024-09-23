@@ -3,14 +3,11 @@
 	import PhaserGame, { type TPhaserRef } from '../game/PhaserGame.svelte';
 	import { MainMenu } from '../game/scenes/main-menu';
 	import UI from '../components/ui/game.svelte';
-	import '../../static/assets/fonts/abaddon-bold.ttf';
 
 	let phaserRef: TPhaserRef = $state({
 		game: null,
 		scene: null
 	});
-
-	let isInGame = $state(false);
 
 	let gameContainer: HTMLElement;
 
@@ -21,44 +18,22 @@
 		}
 	};
 
-	const currentScene = (scene: Scene) => {
-		if (scene) {
-			isInGame = true;
-		}
-	};
+	let isInGame = $state(false);
 </script>
 
 <div id="app">
-	<div id="game-container" bind:this={gameContainer}>
-		<PhaserGame bind:phaserRef currentActiveScene={currentScene} />
-		{#if isInGame}
-			<UI />
-		{/if}
+	<div id="container" bind:this={gameContainer}>
+		<PhaserGame bind:phaserRef />
 	</div>
 </div>
 
 <style>
-	@font-face {
-		font-family: 'Monogram';
-		font-style: normal;
-		font-weight: 500;
-		src: url('/assets/fonts/monogram.ttf');
-	}
-
-	@font-face {
-		font-family: 'Abaddon';
-		font-style: normal;
-		font-weight: 500;
-		src: url('/assets/fonts/abaddon-bold.ttf');
-	}
-
 	#app {
 		overflow: hidden;
 		background-color: #000;
-		font-family: 'Monogram', 'Abaddon';
 	}
 
-	#game-container {
+	#container {
 		position: relative;
 		overflow: hidden;
 	}
