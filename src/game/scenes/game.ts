@@ -29,14 +29,23 @@ export class Game extends Scene {
 		this.map = new MapRenderer(this, 0, 0);
 		this.map.create();
 
-		// Create player at the (0, 0) tile position
-		const startPos = this.map.getTilePosition(0, 0);
+		const mapWidth = this.map.mapWidth;
+		const mapHeight = this.map.mapHeight;
+		const centerTileX = Math.floor(mapWidth / 2) - 1;
+		const centerTileY = Math.floor(mapHeight / 2) - 1;
+
+		const startPos = this.map.layer.getTileAt(centerTileX, centerTileY);
 		const username = 'drei'; // Replace with actual username retrieval
 
-		this.player = new PlayerSprite(this, startPos.x, startPos.y, username, this.map.tileHeight);
+		this.player = new PlayerSprite(this, 0, 0, username, this.map.tileHeight);
+
 		// Adjust the player's initial position to be centered on the tile
-		this.player.setPosition(startPos.x, startPos.y - this.player.offsetY);
+		this.player.setPosition(startPos.pixelX, startPos.pixelY - this.player.offsetY);
 		this.player.setDepth(this.player.tileY + 1);
+
+		// Update player's tile coordinates
+		this.player.tileX = centerTileX;
+		this.player.tileY = centerTileY;
 
 		// Set up camera
 		this.cameras.main.setZoom(1);
@@ -44,17 +53,12 @@ export class Game extends Scene {
 		this.cameras.main.setRoundPixels(true);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
 
-		// Remove any camera offset adjustment
-		// this.cameras.main.setFollowOffset(0, 0);
-
 		// Render UI
 		this.scene.launch('NativeUI');
 
 		this.cursors = this.input.keyboard!.createCursorKeys();
 		this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-		// Remove the existing EventBus listener and add it directly to the map
-		// EventBus.on('tile-clicked', this.handleTileClick, this);
 		this.map.on('tileclick', this.handleTileClick, this);
 
 		this.createNPC('mage', 0, 1, 'Ghost');
