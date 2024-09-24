@@ -56,10 +56,10 @@
 		"windows": [
 			{
 				"fullscreen": false,
-				"height": 630,
+				"height": 633,
 				"resizable": false,
 				"title": "Hometown",
-				"width": 800
+				"width": 804
 			}
 		]
 	}
