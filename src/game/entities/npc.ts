@@ -61,7 +61,7 @@ export class NPC extends GameObjects.Container {
 			})
 			.setVisible(false)
 			.setOrigin(0.5)
-			.setResolution(10);
+			.setResolution(1);
 
 		this.add(this.nameText);
 

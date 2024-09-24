@@ -47,7 +47,7 @@ export class PlayerSprite extends GameObjects.Container {
 		this.playerSprite.setDepth(3);
 		// Create username text
 		this.usernameText = scene.add
-			.text(this.playerSprite.x, this.playerSprite.y, 'shrube', {
+			.text(0, 0, 'shrube', {
 				fontSize: '16px',
 				color: '#ffffff',
 				fontFamily: 'Abaddon',
@@ -57,7 +57,6 @@ export class PlayerSprite extends GameObjects.Container {
 			})
 			.setVisible(false);
 
-		this.usernameText.setResolution(10);
 		this.usernameText.setDepth(3);
 		this.usernameText.setPosition(0, -32);
 		this.usernameText.setOrigin(0.5);
