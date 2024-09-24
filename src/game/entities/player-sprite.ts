@@ -16,12 +16,11 @@ export class PlayerSprite extends GameObjects.Container {
 	isIdling: boolean = false;
 	isAttacking: boolean = false;
 	username: string;
+	textureKey: string = 'fighter';
 
 	private usernameText: GameObjects.Text;
 	private playerSprite: GameObjects.Sprite;
 	private lastAttackTime: number = 0;
-	private isAnimationPlaying: boolean = false;
-	private currentAnimation: string = '';
 	private animationMap = {
 		up: { idle: 'player-idle-rear', attack: 'player-attack-rear' },
 		down: { idle: 'player-idle-front', attack: 'player-attack-front' },
@@ -37,29 +36,39 @@ export class PlayerSprite extends GameObjects.Container {
 		scene.add.existing(this);
 		this.username = username;
 
-		this.playerSprite = scene.add.sprite(x, y, 'fighter', 1);
+		this.playerSprite = scene.add.sprite(x, y, this.textureKey, 1);
 		this.add(this.playerSprite);
 		this.createAnimations();
 		this.playIdleAnimation();
 		this.playerSprite.setDepth(3);
 		// Create username text
-		this.usernameText = scene.add.text(this.playerSprite.x, this.playerSprite.y, username, {
-			fontSize: '16px',
-			color: '#ffffff',
-			fontFamily: 'Monogram',
-			stroke: '#000000',
-			strokeThickness: 2,
-			align: 'center'
-		});
+		this.usernameText = scene.add
+			.text(this.playerSprite.x, this.playerSprite.y, 'shrube', {
+				fontSize: '16px',
+				color: '#ffffff',
+				fontFamily: 'Abaddon',
+				stroke: '#000000',
+				strokeThickness: 2,
+				align: 'center'
+			})
+			.setVisible(false);
 
 		this.usernameText.setResolution(10);
 		this.usernameText.setDepth(3);
-		this.usernameText.setPosition(
-			-this.playerSprite.getBounds().width / 2 + 4,
-			this.playerSprite.y - 32
-		);
+		this.usernameText.setPosition(0, -32);
+		this.usernameText.setOrigin(0.5);
+
+		this.playerSprite.setInteractive();
 
 		this.add(this.usernameText);
+
+		this.playerSprite.on('pointerover', () => {
+			this.usernameText.setVisible(true);
+		});
+
+		this.playerSprite.on('pointerout', () => {
+			this.usernameText.setVisible(false);
+		});
 
 		// Create particle emitter
 		this.particles = scene.add.particles(this.playerSprite.x, this.playerSprite.y, 'pixel', {
@@ -166,8 +175,8 @@ export class PlayerSprite extends GameObjects.Container {
 			this.playerSprite.setFrame(animationConfig.frames[0].frame.name);
 		}
 
-		this.currentAnimation = key;
 		this.playerSprite.play(key);
+
 		if (onComplete) {
 			this.playerSprite.once('animationcomplete', onComplete);
 		}
@@ -176,56 +185,56 @@ export class PlayerSprite extends GameObjects.Container {
 	private createAnimations() {
 		this.scene.anims.create({
 			key: 'player-idle-rear',
-			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 8, end: 8 }),
+			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 8, end: 8 }),
 			frameRate: 1,
 			repeat: -1 // Set to -1 for infinite repeat
 		});
 
 		this.scene.anims.create({
 			key: 'player-idle-front',
-			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 0, end: 0 }),
+			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 0, end: 0 }),
 			frameRate: 1,
 			repeat: -1 // Set to -1 for infinite repeat
 		});
 
 		this.scene.anims.create({
 			key: 'player-walk-down',
-			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 0, end: 7 }),
+			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 0, end: 7 }),
 			duration: 600,
 			repeat: -1
 		});
 
 		this.scene.anims.create({
 			key: 'player-walk-up',
-			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 8, end: 15 }),
+			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 8, end: 15 }),
 			duration: 600,
 			repeat: -1
 		});
 
 		this.scene.anims.create({
 			key: 'player-walk-left',
-			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 8, end: 15 }),
+			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 8, end: 15 }),
 			duration: 600,
 			repeat: -1
 		});
 
 		this.scene.anims.create({
 			key: 'player-walk-right',
-			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 0, end: 7 }),
+			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 0, end: 7 }),
 			duration: 600,
 			repeat: -1
 		});
 
 		this.scene.anims.create({
 			key: 'player-attack-rear',
-			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 20, end: 23 }),
+			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 20, end: 23 }),
 			frameRate: 10,
 			repeat: 0
 		});
 
 		this.scene.anims.create({
 			key: 'player-attack-front',
-			frames: this.scene.anims.generateFrameNumbers('fighter', { start: 16, end: 19 }),
+			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 16, end: 19 }),
 			frameRate: 10,
 			repeat: 0
 		});
