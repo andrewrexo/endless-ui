@@ -1,22 +1,34 @@
 <script lang="ts">
 	import { EventBus } from './event-bus';
-	import StartGame from './main';
 	import UI from '../components/ui/game.svelte';
-	import type { Scene } from 'phaser';
+	import { Game, type Scene } from 'phaser';
+	import config from './main';
 
-	let game: Phaser.Game | null = null;
 	let isInGame = $state(false);
+	let isBlurred = $state(true);
+
+	const StartGame = (parent: string) => {
+		return new Game({ ...config, parent });
+	};
 
 	$effect(() => {
-		game = StartGame('game-container');
+		StartGame('game-container');
+	});
 
-		EventBus.on('current-scene-ready', (sceneInstance: Scene) => {
-			isInGame = true;
-		});
+	EventBus.on('current-scene-ready', (sceneInstance: Scene) => {
+		isInGame = true;
+		// Add a slight delay before removing the blur
+		setTimeout(() => {
+			isBlurred = false;
+		}, 500);
+		console.log('current-scene-ready', sceneInstance);
 	});
 </script>
 
-<div id="game-container" class="relative w-full h-full">
+<div
+	id="game-container"
+	class={`relative w-full h-full ${isInGame ? 'scale-100' : 'scale-125'} transition-all duration-300`}
+>
 	{#if isInGame}
 		<UI />
 	{/if}

@@ -1,8 +1,5 @@
 <script lang="ts">
-	import type { Scene } from 'phaser';
 	import PhaserGame from '../game/PhaserGame.svelte';
-	import { MainMenu } from '../game/scenes/main-menu';
-	import UI from '../components/ui/game.svelte';
 </script>
 
 <div id="app">
@@ -14,7 +11,6 @@
 <style>
 	#app {
 		overflow: hidden;
-		background-color: #000;
 	}
 
 	#container {

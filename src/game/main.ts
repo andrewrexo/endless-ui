@@ -1,7 +1,6 @@
 import { Boot } from './scenes/boot';
 import { Game as GameScene } from './scenes/game';
-import { MainMenu } from './scenes/main-menu';
-import { AUTO, CANVAS, Game, WEBGL } from 'phaser';
+import { AUTO } from 'phaser';
 import Preloader from './scenes/preloader';
 import { NativeUI } from './scenes/native-ui';
 
@@ -17,9 +16,9 @@ const config: Phaser.Types.Core.GameConfig = {
 		height: 600,
 		autoCenter: Phaser.Scale.CENTER_BOTH
 	},
-	zoom: 1.5,
+	zoom: 1,
 	backgroundColor: '#000',
-	scene: [Boot, Preloader, MainMenu, GameScene, NativeUI],
+	scene: [Boot, Preloader, GameScene, NativeUI],
 	render: {
 		powerPreference: 'high-performance',
 		pixelArt: true,
@@ -37,8 +36,4 @@ const config: Phaser.Types.Core.GameConfig = {
 	}
 };
 
-const StartGame = (parent: string) => {
-	return new Game({ ...config, parent });
-};
-
-export default StartGame;
+export default config;
