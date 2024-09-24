@@ -2,6 +2,7 @@ import { Scene } from 'phaser';
 
 export default class Preloader extends Scene {
 	bar!: Phaser.GameObjects.Rectangle;
+	rect!: Phaser.GameObjects.Rectangle;
 	text!: Phaser.GameObjects.Text;
 	progress: number = 0;
 
@@ -10,8 +11,7 @@ export default class Preloader extends Scene {
 	}
 
 	init(): void {
-		this.add.image(this.scale.width / 2, this.scale.height / 2, 'background-2');
-		this.add
+		this.rect = this.add
 			.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width / 2, 32)
 			.setStrokeStyle(2, 0x000000);
 		this.text = this.add
@@ -67,10 +67,13 @@ export default class Preloader extends Scene {
 
 		this.scene.transition({
 			target: 'Game',
-			duration: 100,
+			duration: 200,
 			moveBelow: true,
 			onUpdate: (progress: number) => {
 				// Fade out the black rectangle
+				this.text.setAlpha(1 - progress);
+				this.bar.setAlpha(1 - progress);
+				this.rect.setAlpha(1 - progress);
 				fadeRect.setAlpha(1 - progress);
 			}
 		});
