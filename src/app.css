@@ -2,4 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Add any other global styles here */
+body {
+	margin: 0;
+	padding: 0;
+}
+
+@layer base {
+	.chat-text::placeholder {
+		@apply text-gray-500;
+	}
+}
