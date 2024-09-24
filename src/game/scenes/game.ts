@@ -5,6 +5,7 @@ import { centerX as scaleCenterX, centerY as scaleCenterY } from '../scale';
 import { PlayerSprite } from '../entities/player-sprite';
 import { ChatBubble } from '../entities/chat-bubble';
 import { NPC } from '../entities/npc';
+import { action } from '../../components/ui/main/action.svelte';
 
 export class Game extends Scene {
 	map!: MapRenderer; // Add the '!' to fix the initialization error
@@ -75,6 +76,10 @@ export class Game extends Scene {
 		window.addEventListener('focus', this.onWindowFocus.bind(this));
 		window.addEventListener('blur', this.onWindowBlur.bind(this));
 	}
+
+	updateActionText = (actionName: string, actionDescription: string) => {
+		action.action = { action: actionName, text: actionDescription };
+	};
 
 	onWindowFocus() {
 		this.cursors = this.input.keyboard!.createCursorKeys();

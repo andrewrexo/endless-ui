@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { EventBus } from '../../../game/event-bus';
+	import { action } from './action.svelte';
+	import Message from '../../icons/message.svelte';
+	import UserInteract from '../../icons/user-interact.svelte';
 	import Forward from '../../icons/forward.svelte';
 
 	interface ActionText {
@@ -7,25 +9,22 @@
 		text: string;
 	}
 
-	let action = $state('');
-	let text = $state('');
-
-	EventBus.on('action-text', (event: ActionText) => {
-		action = event.action;
-		text = event.text;
-	});
+	const actionIconSet = new Map<string, any>([
+		['Player', UserInteract],
+		['Talk to', Forward]
+	]);
 </script>
 
 <div
 	class="self-start pointer-events-auto flex flex-row gap-2 items-center text-gray-300 px-2 mt-2"
 >
-	{#if action}
-		<span class="h-5">
-			<Forward size={16} />
+	{#if action.actionName}
+		<span class="h-6">
+			{@render actionIconSet.get(action.actionName)({ size: 16 })}
 		</span>
 		<div class="text-xl pointer-events-none action-text text-gray-300">
-			{action}
-			<span class="text-gray-200 text-lg font-bold">{text}</span>
+			{action.actionName}
+			<span class="text-primary text-lg font-medium">{action.actionDescription}</span>
 		</div>
 	{/if}
 </div>
