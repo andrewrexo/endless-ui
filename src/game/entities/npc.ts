@@ -29,7 +29,7 @@ export class NPC extends GameObjects.Container {
 		// Create border sprite
 		this.borderSprite = scene.add.sprite(0, 0, key);
 		this.borderSprite.setTintFill(0xffffff);
-		this.borderSprite.setScale(1.2);
+		this.borderSprite.setScale(1.1);
 		this.borderSprite.setVisible(false);
 		this.add(this.borderSprite);
 
@@ -38,11 +38,11 @@ export class NPC extends GameObjects.Container {
 		this.add(this.sprite);
 
 		// Create name text
-		this.nameText = scene.add.text(0, -24, name, {
+		this.nameText = scene.add.text(0, -32, name, {
 			fontSize: '16px',
-			color: '#000000',
-			fontFamily: 'Monogram',
-			stroke: '#ffffff',
+			color: '#ffffff',
+			fontFamily: 'Abaddon',
+			stroke: '#000000',
 			strokeThickness: 2,
 			align: 'center'
 		});
@@ -74,7 +74,8 @@ export class NPC extends GameObjects.Container {
 
 		// Set Position
 		const position = map.getTilePosition(tileX, tileY);
-		this.setPosition(position.x, position.y - 8);
+		console.log(this.sprite.height);
+		this.setPosition(position.x, position.y - this.sprite.height / 3);
 
 		// Add to scene
 		scene.add.existing(this);
