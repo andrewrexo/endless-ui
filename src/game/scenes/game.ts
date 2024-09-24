@@ -76,7 +76,10 @@ export class Game extends Scene {
 		window.addEventListener('blur', this.onWindowBlur.bind(this));
 	}
 
-	onWindowFocus() {}
+	onWindowFocus() {
+		this.cursors = this.input.keyboard!.createCursorKeys();
+		this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+	}
 
 	onWindowBlur() {
 		// Remove active keydown events when the window loses focus
