@@ -143,7 +143,7 @@
 				}}
 				type="text"
 				placeholder="Chat..."
-				class="select-none focus:outline-none grow bg-transparent"
+				class="select-none focus:outline-none grow bg-transparent text-slate-300"
 				onfocus={() => {
 					isChatboxFocused = true;
 				}}

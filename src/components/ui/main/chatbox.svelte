@@ -29,14 +29,14 @@
 >
 	<div bind:this={chatbox} class="chat-messages overflow-y-auto h-[140px] pr-2 space-y-1">
 		{#each chatStore.messages as message}
-			<div class="rounded-lg px-2">
+			<div class="rounded-lg px-[0.7rem]">
 				<div
 					class={`chat-header leading-none text-md ${message.sender === 'shrube' ? 'text-primary' : ''}`}
 				>
 					{message.sender}
 					<time class="text-xs leading-none opacity-50">{message.timestamp}</time>
 				</div>
-				<div class="flex items-center w-full text-md">
+				<div class="flex items-center w-full text-md text-slate-300">
 					<p>{message.content}</p>
 				</div>
 			</div>
