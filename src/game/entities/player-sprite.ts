@@ -1,5 +1,6 @@
 import { Scene, GameObjects, Math as PhaserMath } from 'phaser';
 import { ChatBubble } from './chat-bubble';
+import { Game as GameScene } from '../scenes/game';
 
 export class PlayerSprite extends GameObjects.Container {
 	tileX: number = 0;
@@ -17,6 +18,8 @@ export class PlayerSprite extends GameObjects.Container {
 	isAttacking: boolean = false;
 	username: string;
 	textureKey: string = 'fighter';
+	action: string = 'Player';
+	actionDescription: string = '';
 
 	private usernameText: GameObjects.Text;
 	private playerSprite: GameObjects.Sprite;
@@ -31,10 +34,11 @@ export class PlayerSprite extends GameObjects.Container {
 	private chatBubble: ChatBubble | null = null;
 	private chatBubbleTimer: Phaser.Time.TimerEvent | null = null;
 
-	constructor(scene: Scene, x: number, y: number, username: string, tileHeight: number) {
+	constructor(scene: GameScene, x: number, y: number, username: string, tileHeight: number) {
 		super(scene, x, y);
-		scene.add.existing(this);
+
 		this.username = username;
+		this.actionDescription = username;
 
 		this.playerSprite = scene.add.sprite(x, y, this.textureKey, 1);
 		this.add(this.playerSprite);
@@ -64,10 +68,12 @@ export class PlayerSprite extends GameObjects.Container {
 
 		this.playerSprite.on('pointerover', () => {
 			this.usernameText.setVisible(true);
+			scene.updateActionText(this.action, this.actionDescription);
 		});
 
 		this.playerSprite.on('pointerout', () => {
 			this.usernameText.setVisible(false);
+			scene.updateActionText('', '');
 		});
 
 		// Create particle emitter
@@ -82,8 +88,9 @@ export class PlayerSprite extends GameObjects.Container {
 		});
 
 		this.particles.setDepth(4);
-
 		this.offsetY = tileHeight / 4; // Set offset to 1/4 of tile height
+
+		scene.add.existing(this);
 	}
 
 	startMovement(dx: number, dy: number) {
