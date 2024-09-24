@@ -11,7 +11,7 @@ export class NativeUI extends Phaser.Scene {
 	}
 
 	create() {
-		EventBus.on('chat-toggle', this.toggleChat.bind(this));
+		//EventBus.on('chat-toggle', this.toggleChat.bind(this));
 
 		this.addChatBox();
 	}
