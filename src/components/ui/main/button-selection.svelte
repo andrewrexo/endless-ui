@@ -3,20 +3,12 @@
 
 	import { fly } from 'svelte/transition';
 	import { EventBus } from '../../../game/event-bus';
-	import Book from '../../icons/book.svelte';
 	import Chat from '../../icons/chat.svelte';
-	import Target from '../../icons/target.svelte';
-	import UserOptions from '../../icons/user-options.svelte';
 	import Users from '../../icons/users.svelte';
+	import Settings from '../../icons/settings.svelte';
 
 	let mounted = $state(false);
-	let buttons = $state([
-		{ icon: Chat, event: 'chat-toggle' },
-		{ icon: Book },
-		{ icon: Target },
-		{ icon: UserOptions },
-		{ icon: Users }
-	]);
+	let buttons = $state([{ icon: Chat, event: 'chat-toggle' }, { icon: Users }, { icon: Settings }]);
 
 	$effect(() => {
 		mounted = true;
@@ -29,34 +21,17 @@
 			onclick={() => {
 				if (button.event) EventBus.emit(button.event);
 			}}
-			transition:fly={{ y: -100, duration: 200, delay: index * 100 }}
-			class="icon-container"
+			transition:fly={{ x: 100, duration: 300, delay: index * 100 }}
+			class="btn btn-primary btn-sm px-2"
 		>
-			{@render button.icon()}
+			{@render button.icon({ size: 32 })}
 		</button>
 	{/if}
 {/each}
 
 <style>
 	button {
-		padding: 0.5rem;
 		width: 32px;
 		height: 32px;
-		outline: none;
-		border: none;
-		font-size: 16px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: #333;
-		border: 1px solid #ccc;
-		background: #eee;
-		border-radius: 0.25rem;
-		box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.5);
-		cursor: pointer;
-	}
-
-	button:hover {
-		translate: 0 2px;
 	}
 </style>

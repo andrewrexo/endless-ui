@@ -21,6 +21,7 @@
 		"@types/node": "^22.5.5",
 		"autoprefixer": "^10.4.20",
 		"colyseus.js": "^0.15.26",
+		"daisyui": "^4.12.10",
 		"eslint": "^9.11.0",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-plugin-svelte": "^2.44.0",

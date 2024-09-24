@@ -1,13 +1,10 @@
 <script lang="ts">
-	import { fade } from 'svelte/transition';
-	import { page } from '$app/stores';
+	import { fade, fly } from 'svelte/transition';
 	import ButtonSelection from './main/button-selection.svelte';
 	import { EventBus } from '../../game/event-bus';
-	import Forward from '../icons/forward.svelte';
-	import Chat from '../icons/chat.svelte';
 	import ActionText from './main/action-text.svelte';
+	import Chat from '../icons/chat.svelte';
 
-	let uiContainer: HTMLElement;
 	let chatboxText = $state('');
 	let isChatboxFocused = $state(false);
 	let chatboxInput: HTMLInputElement;
@@ -50,17 +47,19 @@
 
 <div
 	class="flex flex-col justify-between relative pointer-events-none z-10 h-full w-full"
-	bind:this={uiContainer}
-	in:fade={{ duration: 500 }}
+	transition:fade={{ duration: 500 }}
 >
 	<ActionText />
-	<div class="w-[370px] self-start m-2 pointer-events-auto">
+	<div
+		class="w-[370px] self-start pointer-events-auto relative text-white bottom-2 left-2"
+		transition:fly={{ x: -100, duration: 300, delay: 200 }}
+	>
 		<input
 			bind:this={chatboxInput}
 			type="text"
 			bind:value={chatboxText}
 			placeholder="Chat..."
-			class="w-full h-6 border border-gray-300 rounded px-2 py-1 text-gray-800 bg-gray-200 shadow-md focus:outline-none"
+			class="input input-sm w-full text-lg"
 			onfocus={() => {
 				isChatboxFocused = true;
 			}}
@@ -74,9 +73,3 @@
 		<ButtonSelection />
 	</div>
 </div>
-
-<style>
-	input {
-		font-family: 'Monogram';
-	}
-</style>
