@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import { chatStore } from '../../../stores/chatStore.svelte';
+	import { chatbox as chatState } from '../../../stores/chatStore.svelte';
 
 	let {
 		dragAction,
@@ -14,7 +14,7 @@
 	};
 
 	$effect(() => {
-		if (chatbox && chatStore.messages && chatStore.messages.length > 0) {
+		if (chatbox && chatState.messages && chatState.messages.length > 0) {
 			scrollToBottom(chatbox);
 		}
 	});
@@ -25,10 +25,10 @@
 	in:fly={{ duration: 300, y: 20 }}
 	out:fly={{ duration: 300, y: 20 }}
 	style="position: absolute; left: {position.x}px; top: {position.y}px;"
-	class="chat-container bg-base-200/90 w-[360px] rounded-lg p-2 px-1 overflow-hidden pointer-events-auto cursor-grab"
+	class="chat-container bg-base-200/80 w-[360px] rounded-lg p-2 px-1 overflow-hidden pointer-events-auto cursor-grab"
 >
 	<div bind:this={chatbox} class="chat-messages overflow-y-auto h-[140px] pr-2 space-y-1">
-		{#each chatStore.messages as message}
+		{#each chatState.messages as message}
 			<div class="rounded-lg px-[0.7rem]">
 				<div
 					class={`chat-header leading-none text-md ${message.sender === 'shrube' ? 'text-primary' : ''}`}

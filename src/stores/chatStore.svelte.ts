@@ -4,7 +4,7 @@ export type Message = {
 	timestamp: string;
 };
 
-function createChatStore() {
+function createChatState() {
 	let messages = $state<Message[]>([
 		{ sender: 'shrube', content: 'Welcome to the game!', timestamp: '10:00' },
 		{ sender: 'player1', content: 'thanks g ur a good one', timestamp: '10:02' }
@@ -22,4 +22,4 @@ function createChatStore() {
 	};
 }
 
-export const chatStore = createChatStore();
+export const chatbox = createChatState();

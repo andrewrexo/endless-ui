@@ -7,7 +7,7 @@
 	import Users from '../../icons/users.svelte';
 	import Settings from '../../icons/settings.svelte';
 
-	import { buttonActions, type ButtonAction } from '../buttons.svelte';
+	import { ui, type ButtonAction } from '../../../lib/user-interface.svelte';
 
 	let mounted = $state(false);
 	let buttons = $state([
@@ -24,7 +24,7 @@
 {#each buttons as button, index}
 	{#if mounted}
 		<button
-			onclick={() => buttonActions.handleButtonAction(button.target, button.action as ButtonAction)}
+			onclick={() => ui.handleButtonAction(button.target, button.action as ButtonAction)}
 			transition:fly={{ x: 100, duration: 300, delay: index * 100 }}
 			class="btn btn-primary btn-sm px-2"
 		>
