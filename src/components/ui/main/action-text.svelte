@@ -3,6 +3,9 @@
 	import Message from '../../icons/message.svelte';
 	import UserInteract from '../../icons/user-interact.svelte';
 	import Forward from '../../icons/forward.svelte';
+	import UserOptions from '../../icons/user-options.svelte';
+	import Users from '../../icons/users.svelte';
+	import Chat from '../../icons/chat.svelte';
 
 	interface ActionText {
 		action: string;
@@ -11,7 +14,10 @@
 
 	const actionIconSet = new Map<string, any>([
 		['Player', UserInteract],
-		['Talk to', Forward]
+		['Menu', Forward],
+		['View equipment', UserOptions],
+		['Add as friend', Users],
+		['Send message', Chat]
 	]);
 </script>
 
