@@ -16,7 +16,6 @@ export class PlayerSprite extends GameObjects.Container {
 	isShooting: boolean = false;
 	isIdling: boolean = false;
 	isAttacking: boolean = false;
-	username: string;
 	textureKey: string = 'fighter';
 	action: string = 'Player';
 	actionDescription: string = '';
@@ -37,7 +36,7 @@ export class PlayerSprite extends GameObjects.Container {
 	constructor(scene: GameScene, x: number, y: number, username: string, tileHeight: number) {
 		super(scene, x, y);
 
-		this.username = username;
+		this.name = username;
 		this.actionDescription = username;
 
 		this.playerSprite = scene.add.sprite(x, y, this.textureKey, 1);
@@ -47,7 +46,7 @@ export class PlayerSprite extends GameObjects.Container {
 		this.playerSprite.setDepth(3);
 		// Create username text
 		this.usernameText = scene.add
-			.text(0, 0, 'shrube', {
+			.text(0, 0, username, {
 				fontSize: '16px',
 				color: '#ffffff',
 				fontFamily: 'Abaddon',
@@ -58,7 +57,7 @@ export class PlayerSprite extends GameObjects.Container {
 			.setVisible(false);
 
 		this.usernameText.setDepth(3);
-		this.usernameText.setPosition(0, -32);
+		this.usernameText.setPosition(2, -32);
 		this.usernameText.setOrigin(0.5);
 
 		this.playerSprite.setInteractive();

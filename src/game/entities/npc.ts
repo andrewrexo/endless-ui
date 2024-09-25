@@ -11,6 +11,7 @@ export class NPC extends GameObjects.Container {
 	private text: string;
 	public tileX: number;
 	public tileY: number;
+	public name: string;
 
 	constructor(
 		scene: GameScene,
@@ -22,8 +23,9 @@ export class NPC extends GameObjects.Container {
 	) {
 		super(scene, 0, 0);
 
-		this.action = 'Talk to';
+		this.action = 'Menu';
 		this.text = name;
+		this.name = name;
 
 		this.tileX = tileX;
 		this.tileY = tileY;
