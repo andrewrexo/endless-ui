@@ -6,6 +6,7 @@ import { PlayerSprite } from '../entities/player-sprite';
 import { ChatBubble } from '../entities/chat-bubble';
 import { NPC } from '../entities/npc';
 import { action } from '../../components/ui/main/action.svelte';
+import { ui } from '../../lib/user-interface.svelte';
 
 export class Game extends Scene {
 	map!: MapRenderer; // Add the '!' to fix the initialization error
@@ -16,10 +17,12 @@ export class Game extends Scene {
 	private pendingDestination: { x: number; y: number } | null = null;
 	private keyPressStartTime: number = 0;
 	private keyPressThreshold: number = 80; // milliseconds
-	private npcs: NPC[] = [];
+	public npcs: NPC[] = [];
+	public players: PlayerSprite[] = [];
 	private inputEnabled: boolean = true;
 	private isAttackKeyDown: boolean = false;
 	private lastAttackTime: number = 0;
+	private contextMenu: Phaser.GameObjects.DOMElement | null = null;
 
 	constructor() {
 		super('Game');
@@ -38,9 +41,9 @@ export class Game extends Scene {
 		const centerTileY = 3;
 
 		const startPos = this.map.layer.getTileAt(centerTileX, centerTileY);
-		const username = 'drei'; // Replace with actual username retrieval
+		const username = 'shrube'; // Replace with actual username retrieval
 
-		this.player = new PlayerSprite(this, 0, 0, username, this.map.tileHeight);
+		this.player = this.createPlayer(startPos.x, startPos.y, username);
 		this.player.faceDirection('left', { update: true });
 
 		// Adjust the player's initial position to be centered on the tile
@@ -64,13 +67,22 @@ export class Game extends Scene {
 		this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
 		this.map.on('tileclick', this.handleTileClick, this);
+		this.map.on('interactableclick', this.handleInteractableClick, this);
+		this.map.on('contextmenu', this.handleContextMenu, this);
 
 		this.createNPC('mage', 2, 2, 'Mage');
 		this.createNPC('fighter', 2, 3, 'Fighter');
-		this.createNPC('cleric', 2, 4, 'Cleric');
+		this.createNPC('cleric', 2, 4, '1Cleric');
 
 		EventBus.emit('current-scene-ready', this);
 		EventBus.on('chatbox:send', this.sendMessage.bind(this));
+		EventBus.on(
+			'context-hide',
+			() => {
+				this.contextMenu?.setVisible(false);
+			},
+			this
+		);
 
 		// Add event listeners for window focus and blur
 		window.addEventListener('focus', this.onWindowFocus.bind(this));
@@ -94,9 +106,16 @@ export class Game extends Scene {
 	createNPC(spriteKey: string, tileX: number, tileY: number, name: string) {
 		const npc = new NPC(this, spriteKey, tileX, tileY, name, this.map);
 		this.npcs.push(npc);
+		this.map.addEntity(npc, tileX, tileY);
 		return npc;
 	}
 
+	createPlayer(tileX: number, tileY: number, name: string) {
+		const player = new PlayerSprite(this, tileX, tileY, name, this.map.tileHeight);
+		this.players.push(player);
+		this.map.addEntity(player, tileX, tileY);
+		return player;
+	}
 	update(time: number, delta: number) {
 		if (
 			this.map.activeTile &&
@@ -118,8 +137,54 @@ export class Game extends Scene {
 		this.npcs.forEach((npc) => npc.update());
 	}
 
+	handleContextMenu = (object: NPC | PlayerSprite) => {
+		ui.handleContextAction('open', {
+			name: object.name
+		});
+
+		if (ui.contextMenu) {
+			if (this.contextMenu) {
+				this.contextMenu.setPosition(object.x - 10, object.y).setVisible(true);
+				return;
+			}
+
+			this.contextMenu = this.add.dom(object.x - 10, object.y, ui.contextMenu).setVisible(true);
+
+			this.contextMenu.addListener('pointerdown');
+			this.contextMenu.on('pointerdown', () => {
+				this.contextMenu?.setVisible(false);
+			});
+
+			this.add.existing(this.contextMenu);
+		}
+	};
+
+	handleInteractableClick = ({ npc, tile }: { npc: NPC; tile: { x: number; y: number } }) => {
+		console.log('Interactable clicked:', tile);
+
+		const closestTile = this.findClosestTile(tile);
+
+		if (this.player.isMoving) {
+			console.log('Player is moving, setting pending destination');
+			this.pendingDestination = { x: closestTile.x, y: closestTile.y };
+			return;
+		}
+
+		this.setNewDestination(closestTile);
+	};
+
+	findClosestTile = (tile: { x: number; y: number }) => {
+		const { x, y } = tile;
+
+		return { x, y };
+	};
+
 	handleTileClick = (tile: { x: number; y: number }) => {
 		console.log('Tile clicked:', tile);
+
+		if (this.contextMenu) {
+			this.contextMenu.setVisible(false);
+		}
 
 		if (this.player.isMoving) {
 			console.log('Player is moving, setting pending destination');

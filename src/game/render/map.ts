@@ -1,19 +1,24 @@
 import Phaser from 'phaser';
 import { EventBus } from '../event-bus';
+import { Game as GameScene } from '../scenes/game';
+import type { NPC } from '../entities/npc';
+import { ui } from '../../lib/user-interface.svelte';
+import type { PlayerSprite } from '../entities/player-sprite';
 
 export class MapRenderer extends Phaser.GameObjects.Container {
 	tileWidth: number = 64;
 	tileHeight: number;
 	mapWidth: number;
 	mapHeight: number;
-	scene: Phaser.Scene;
+	scene: GameScene;
 	map!: Phaser.Tilemaps.Tilemap;
 	tileset!: Phaser.Tilemaps.Tileset;
 	layer!: Phaser.Tilemaps.TilemapLayer;
 	walkableTiles: boolean[][];
 	activeTile: Phaser.Tilemaps.Tile | null = null;
+	interactables: any[][];
 
-	constructor(scene: Phaser.Scene, x: number, y: number) {
+	constructor(scene: GameScene, x: number, y: number) {
 		super(scene, x, y);
 
 		this.scene = scene;
@@ -22,6 +27,7 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		this.mapWidth = 1;
 		this.mapHeight = 1;
 		this.walkableTiles = [];
+		this.interactables = [];
 
 		this.load();
 		this.initializeWalkableTiles();
@@ -42,8 +48,10 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 	initializeWalkableTiles() {
 		for (let y = 0; y < this.mapHeight; y++) {
 			this.walkableTiles[y] = [];
+			this.interactables[y] = [];
 			for (let x = 0; x < this.mapWidth; x++) {
 				this.walkableTiles[y][x] = true; // Assume all tiles are walkable for now
+				this.interactables[y] = [];
 			}
 		}
 	}
@@ -66,6 +74,10 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		this.scene.input.on('pointerdown', this.onSceneClick, this);
 	}
 
+	addEntity(entity: NPC | PlayerSprite, x: number, y: number) {
+		this.interactables[x][y] = entity;
+	}
+
 	load(): void {
 		// Load the tilemap from the JSON file
 		this.map = this.scene.make.tilemap({ key: 'map-1' });
@@ -84,14 +96,18 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 	}
 
 	onSceneClick(pointer: Phaser.Input.Pointer) {
-		if (pointer.rightButtonDown()) {
-			return;
-		}
-
 		const worldPoint = pointer.positionToCamera(this.scene.cameras.main) as Phaser.Math.Vector2;
 		const tile = this.layer.getIsoTileAtWorldXY(worldPoint.x, worldPoint.y);
 
 		if (!tile) return;
+
+		if (pointer.rightButtonDown()) {
+			if (this.interactables[tile.x][tile.y]) {
+				this.emit('contextmenu', this.interactables[tile.x][tile.y]);
+			}
+
+			return;
+		}
 
 		console.log('Clicked world position:', worldPoint.x, worldPoint.y);
 		console.log('Calculated tile:', tile);

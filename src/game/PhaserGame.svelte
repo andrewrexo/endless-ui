@@ -3,6 +3,7 @@
 	import UI from '../components/ui/game.svelte';
 	import { Game, type Scene } from 'phaser';
 	import config from './main';
+	import Context from '../components/ui/main/context.svelte';
 
 	let isInGame = $state(false);
 	let isBlurred = $state(true);
@@ -29,9 +30,8 @@
 	id="game-container"
 	class={`relative w-full h-full ${isInGame ? 'scale-100' : 'scale-125'} transition-all duration-300`}
 >
-	{#if isInGame}
-		<UI />
-	{/if}
+	<UI />
+	<Context position={{ x: 0, y: 0 }} />
 </div>
 
 <style lang="postcss">
@@ -43,10 +43,10 @@
 
 	:global(canvas) {
 		position: absolute;
-		z-index: 0;
 		top: 0;
 		left: 0;
 		width: 800px;
 		height: 600px;
+		z-index: -1;
 	}
 </style>

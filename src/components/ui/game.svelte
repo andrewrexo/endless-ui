@@ -1,18 +1,23 @@
 <script lang="ts">
-	import { fade, fly } from 'svelte/transition';
 	import ButtonSelection from './main/button-selection.svelte';
 	import { EventBus } from '../../game/event-bus';
 	import ActionText from './main/action-text.svelte';
-	import { buttonActions } from './buttons.svelte';
+	import { ui, type ButtonTarget } from '../../lib/user-interface.svelte';
 	import Chatbox from './main/chatbox.svelte';
-	import { chatStore } from '../../stores/chatStore.svelte';
-	import type { Message } from '../../stores/chatStore.svelte';
+	import { type Message, chatbox } from '../../stores/chatStore.svelte';
 
 	let chatboxText = $state('');
 	let isChatboxFocused = $state(false);
 	let chatboxInput: HTMLInputElement;
 
-	let componentPositions = $state([{ id: 'chat', x: 5, y: 388 }]);
+	let rightClickPosition = $state({ x: 0, y: 0 });
+
+	let componentPositions = $state([
+		{ id: 'chat', x: 5, y: 388 },
+		{ id: 'context', x: 0, y: 0 }
+	]);
+
+	let contextMenuPosition = $derived(rightClickPosition);
 
 	function dragAction(node: HTMLElement, componentId: string) {
 		let startX: number;
@@ -26,6 +31,7 @@
 				startX = event.clientX - component.x;
 				startY = event.clientY - component.y;
 			}
+
 			event.preventDefault();
 		}
 
@@ -33,6 +39,7 @@
 			node.style.cursor = 'grab';
 
 			if (!isDragging) return;
+
 			const index = componentPositions.findIndex((c) => c.id === componentId);
 			if (index !== -1) {
 				componentPositions[index] = {
@@ -83,6 +90,14 @@
 			}
 		}
 
+		if (event.key === 'Escape') {
+			const toClose = Object.entries(ui.interfaces).find(([_, value]) => value === true);
+
+			if (toClose) {
+				ui.handleButtonAction(toClose[0] as ButtonTarget, 'close');
+			}
+		}
+
 		// Prevent space from triggering game actions when chat is focused
 		if (event.key === ' ' && isChatboxFocused) {
 			event.preventDefault();
@@ -102,32 +117,34 @@
 				content: `Random message ${Math.floor(Math.random() * 1000)}`,
 				timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 			};
-			chatStore.addMessage(newMessage);
+			chatbox.addMessage(newMessage);
 		}, 5000);
 
 		return () => clearInterval(interval);
 	});
 </script>
 
-<svelte:window on:keydown={handleGlobalKeyDown} />
+<svelte:window
+	on:keydown={handleGlobalKeyDown}
+	on:contextmenu={(e) => {
+		e.preventDefault();
+	}}
+/>
 
-<div
-	class="flex flex-col justify-between relative z-10 h-full w-full pointer-events-none"
-	transition:fly={{ duration: 500, y: 100 }}
->
+<div class="absolute flex flex-col w-full h-full pointer-events-none justify-between">
 	<ActionText />
-	{#if buttonActions.interfaces.chat}
+	{#if ui.interfaces.chat}
 		<Chatbox
 			dragAction={(node) => dragAction(node, 'chat')}
 			position={componentPositions.find((c) => c.id === 'chat') ?? { x: 0, y: 0 }}
 		/>
 	{/if}
 
-	{#if buttonActions.interfaces.players}
+	{#if ui.interfaces.players}
 		<div>Players Interface</div>
 	{/if}
 
-	{#if buttonActions.interfaces.settings}
+	{#if ui.interfaces.settings}
 		<div>Settings Interface</div>
 	{/if}
 
