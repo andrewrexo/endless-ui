@@ -10,13 +10,17 @@ const config: Phaser.Types.Core.GameConfig = {
 	type: AUTO,
 	width: 800,
 	height: 600,
-	parent: 'game-container',
+	parent: 'app',
 	scale: {
 		width: 800,
 		height: 600,
 		autoCenter: Phaser.Scale.CENTER_BOTH
 	},
+	dom: {
+		createContainer: true
+	},
 	zoom: 1,
+	disableContextMenu: true,
 	backgroundColor: '#000',
 	scene: [Boot, Preloader, GameScene, NativeUI],
 	render: {
