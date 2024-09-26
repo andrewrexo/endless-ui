@@ -60,15 +60,14 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		this.load();
 		// Create the tilemap layer
 		const layer = this.map.createLayer(0, this.tileset, 0, 0);
+
 		if (!layer) {
 			console.error('Failed to create tilemap layer');
 			return;
 		}
+
 		this.layer = layer;
 		this.layer.setPosition(-32, -16);
-
-		this.add(this.layer);
-		this.scene.add.existing(this);
 
 		// Set up interactivity for the entire scene
 		this.scene.input.on('pointerdown', this.onSceneClick, this);

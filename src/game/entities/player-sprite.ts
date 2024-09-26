@@ -58,7 +58,7 @@ export class PlayerSprite extends GameObjects.Container {
 			.setVisible(false);
 
 		this.usernameText.setDepth(3);
-		this.usernameText.setPosition(2, -32);
+		this.usernameText.setPosition(4, -24);
 		this.usernameText.setOrigin(0.5);
 
 		this.playerSprite.setInteractive();
@@ -93,7 +93,7 @@ export class PlayerSprite extends GameObjects.Container {
 		});
 
 		this.particles.setDepth(4);
-		this.offsetY = tileHeight / 4; // Set offset to 1/4 of tile height
+		this.offsetY = Math.round(this.playerSprite.height / 2); // Set offset to 1/4 of tile height
 
 		scene.add.existing(this);
 	}
@@ -134,30 +134,10 @@ export class PlayerSprite extends GameObjects.Container {
 			this.isIdling = false;
 			this.tileX = this.targetTileX;
 			this.tileY = this.targetTileY;
-			this.x = this.tileX * tileWidth;
-			this.y = this.tileY * tileWidth;
 			this.isMoving = false;
 			this.movementProgress = 0;
 			this.isAttacking = false;
 			return true;
-		} else {
-			// Update position during movement
-			const progress = this.movementProgress / tileWidth;
-			this.x = Math.floor(
-				Phaser.Math.Linear(
-					this.tileX * tileWidth,
-					this.targetTileX * tileWidth,
-					Number(progress.toFixed(2))
-				)
-			);
-			this.y = Math.floor(
-				Phaser.Math.Linear(
-					this.tileY * tileWidth,
-					this.targetTileY * tileWidth,
-					Number(progress.toFixed(2))
-				)
-			);
-			console.log(this.x, this.y);
 		}
 
 		return false;
@@ -271,7 +251,7 @@ export class PlayerSprite extends GameObjects.Container {
 			this.chatBubble.setMessage(message);
 		} else {
 			// Create new chat bubble
-			const bubbleX = 0;
+			const bubbleX = 4;
 			const bubbleY = -16;
 			this.chatBubble = new ChatBubble(this.scene, bubbleX, bubbleY, message);
 			this.add(this.chatBubble);

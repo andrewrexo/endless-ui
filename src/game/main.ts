@@ -17,9 +17,6 @@ const config: Phaser.Types.Core.GameConfig = {
 		autoCenter: Phaser.Scale.CENTER_BOTH,
 		autoRound: true
 	},
-	fps: {
-		target: 60
-	},
 	dom: {
 		createContainer: true
 	},

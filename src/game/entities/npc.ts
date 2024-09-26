@@ -60,7 +60,7 @@ export class NPC extends GameObjects.Container {
 
 		// Create name text
 		this.nameText = scene.add
-			.text(0, -32, name, {
+			.text(0, -24, name, {
 				fontSize: '16px',
 				color: '#ffffff',
 				fontFamily: 'Abaddon',

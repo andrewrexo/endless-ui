@@ -57,8 +57,8 @@ export class Game extends Scene {
 
 		// Set up camera
 		this.cameras.main.setZoom(1);
-		this.cameras.main.startFollow(this.player, false);
-		this.cameras.main.setRoundPixels(false);
+		this.cameras.main.startFollow(this.player, false, 1, 1);
+		this.cameras.main.setRoundPixels(true);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
 
 		// Render UI
@@ -118,18 +118,17 @@ export class Game extends Scene {
 		this.map.addEntity(player, tileX, tileY);
 		return player;
 	}
+
 	update(time: number, delta: number) {
-		if (time - this.lastUpdate < 16) return;
-
-		this.lastUpdate = time;
-
 		if (this.inputEnabled) {
 			this.handlePlayerInput(time);
-			this.updatePlayerMovement();
-			if (!this.player.isMoving) {
-				this.movePlayerAlongPath();
-			}
 			this.handleShooting();
+		}
+
+		this.updatePlayerMovement();
+
+		if (!this.player.isMoving) {
+			this.movePlayerAlongPath();
 		}
 
 		if (
@@ -155,11 +154,16 @@ export class Game extends Scene {
 
 		if (ui.contextMenu) {
 			if (this.contextMenu) {
-				this.contextMenu.setPosition(object.x - 10, object.y).setVisible(true);
+				this.contextMenu
+					.setPosition(this.input.mousePointer.x - 10, this.input.mousePointer.y)
+					.setVisible(true);
 				return;
 			}
 
-			this.contextMenu = this.add.dom(object.x - 10, object.y, ui.contextMenu).setVisible(true);
+			this.contextMenu = this.add
+				.dom(this.input.mousePointer.x - 10, this.input.mousePointer.y, ui.contextMenu)
+				.setVisible(true)
+				.setScrollFactor(0);
 
 			this.contextMenu.addListener('pointerdown');
 			this.contextMenu.on('pointerdown', () => {
@@ -207,17 +211,17 @@ export class Game extends Scene {
 	};
 
 	setNewDestination(tile: { x: number; y: number }) {
-		const startX = Math.floor(this.player.tileX);
-		const startY = Math.floor(this.player.tileY);
-		const endX = Math.floor(tile.x);
-		const endY = Math.floor(tile.y);
+		const startX = this.player.tileX;
+		const startY = this.player.tileY;
+		const endX = tile.x;
+		const endY = tile.y;
 
 		const path = this.map.findPath(startX, startY, endX, endY);
+
 		console.log('Path found:', path);
 		if (path.length > 1) {
 			this.currentPath = path.slice(1); // Remove the first element (current position)
 			console.log('Setting current path:', this.currentPath);
-			this.movePlayerAlongPath();
 		} else {
 			console.log('No valid path found');
 		}
@@ -231,11 +235,6 @@ export class Game extends Scene {
 			const dy = Math.floor(nextTile.y - this.player.tileY);
 			this.player.startMovement(dx, dy);
 			this.currentPath.shift();
-		} else if (this.currentPath.length === 0 && this.pendingDestination) {
-			console.log('Reached current destination, processing pending destination');
-			const newDestination = this.pendingDestination;
-			this.pendingDestination = null;
-			this.setNewDestination(newDestination);
 		}
 	}
 
@@ -308,15 +307,12 @@ export class Game extends Scene {
 		} else {
 			const pos = this.map.getTilePosition(this.player.tileX, this.player.tileY);
 			this.player.setPosition(Math.round(pos.x), Math.round(pos.y - this.player.offsetY));
-
 			// Check for pending destination after movement is complete
 			if (this.pendingDestination) {
 				console.log('Processing pending destination after movement');
 				const newDestination = this.pendingDestination;
 				this.pendingDestination = null;
 				this.setNewDestination(newDestination);
-			} else {
-				this.movePlayerAlongPath();
 			}
 		}
 	}
