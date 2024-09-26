@@ -6,6 +6,7 @@
 	import Chatbox from './main/chatbox.svelte';
 	import { type Message, chatbox } from '../../stores/chatStore.svelte';
 	import { action } from './main/action.svelte';
+	import Inventory from './inventory.svelte';
 
 	let chatboxText = $state('');
 	let isChatboxFocused = $state(false);
@@ -15,10 +16,14 @@
 
 	let componentPositions = $state([
 		{ id: 'chat', x: 5, y: 388 },
-		{ id: 'context', x: 0, y: 0 }
+		{ id: 'context', x: 0, y: 0 },
+		{ id: 'inventory', x: 645, y: 365 }
 	]);
 
-	let contextMenuPosition = $derived(rightClickPosition);
+	let interfaceHotkeys = $state([
+		{ id: 'chat', hotkey: 'c' },
+		{ id: 'inventory', hotkey: 'i' }
+	]);
 
 	function dragAction(node: HTMLElement, componentId: string) {
 		let startX: number;
@@ -91,6 +96,10 @@
 			}
 		}
 
+		if (event.target && event.target.type === 'text') {
+			return;
+		}
+
 		if (event.key === 'Escape') {
 			EventBus.emit('context-hide');
 			action.action = { action: '', text: '' };
@@ -102,8 +111,14 @@
 			}
 		}
 
-		// Prevent space from triggering game actions when chat is focused
+		const activeHotkey = interfaceHotkeys.find((value) => value.hotkey == event.key);
+
+		if (activeHotkey) {
+			ui.handleButtonAction(activeHotkey.id as ButtonTarget, 'toggle');
+		}
+
 		if (event.key === ' ' && isChatboxFocused) {
+			// Prevent space from triggering game actions when chat is focused
 			event.preventDefault();
 		}
 	};
@@ -129,7 +144,7 @@
 </script>
 
 <svelte:window
-	on:keydown={handleGlobalKeyDown}
+	on:keyup={handleGlobalKeyDown}
 	on:contextmenu={(e) => {
 		e.preventDefault();
 	}}
@@ -146,6 +161,13 @@
 
 	{#if ui.interfaces.players}
 		<div>Players Interface</div>
+	{/if}
+
+	{#if ui.interfaces.inventory}
+		<Inventory
+			dragAction={(node) => dragAction(node, 'inventory')}
+			position={componentPositions.find((c) => c.id === 'inventory') ?? { x: 0, y: 0 }}
+		/>
 	{/if}
 
 	{#if ui.interfaces.settings}

@@ -8,12 +8,14 @@
 	import Settings from '../../icons/settings.svelte';
 
 	import { ui, type ButtonAction } from '../../../lib/user-interface.svelte';
+	import Bag from '../../icons/bag.svelte';
+	import Book from '../../icons/book.svelte';
 
 	let mounted = $state(false);
 	let buttons = $state([
 		{ icon: Chat, target: 'chat', action: 'toggle' },
-		{ icon: Users, target: 'players', action: 'toggle' },
-		{ icon: Settings, target: 'settings', action: 'toggle' }
+		{ icon: Book, target: 'inventory', action: 'toggle' },
+		{ icon: Users, target: 'players', action: 'toggle' }
 	]);
 
 	$effect(() => {
