@@ -5,6 +5,7 @@
 	import { ui, type ButtonTarget } from '../../lib/user-interface.svelte';
 	import Chatbox from './main/chatbox.svelte';
 	import { type Message, chatbox } from '../../stores/chatStore.svelte';
+	import { action } from './main/action.svelte';
 
 	let chatboxText = $state('');
 	let isChatboxFocused = $state(false);
@@ -91,6 +92,9 @@
 		}
 
 		if (event.key === 'Escape') {
+			EventBus.emit('context-hide');
+			action.action = { action: '', text: '' };
+
 			const toClose = Object.entries(ui.interfaces).find(([_, value]) => value === true);
 
 			if (toClose) {

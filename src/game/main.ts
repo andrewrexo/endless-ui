@@ -14,7 +14,11 @@ const config: Phaser.Types.Core.GameConfig = {
 	scale: {
 		width: 800,
 		height: 600,
-		autoCenter: Phaser.Scale.CENTER_BOTH
+		autoCenter: Phaser.Scale.CENTER_BOTH,
+		autoRound: true
+	},
+	fps: {
+		target: 60
 	},
 	dom: {
 		createContainer: true
@@ -25,18 +29,10 @@ const config: Phaser.Types.Core.GameConfig = {
 	scene: [Boot, Preloader, GameScene, NativeUI],
 	render: {
 		powerPreference: 'high-performance',
-		pixelArt: true,
-		roundPixels: true
+		pixelArt: true
 	},
 	input: {
 		windowEvents: false
-	},
-	physics: {
-		default: 'arcade',
-		arcade: {
-			gravity: { x: 0, y: 300 },
-			debug: true
-		}
 	}
 };
 

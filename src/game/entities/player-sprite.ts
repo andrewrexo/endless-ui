@@ -19,6 +19,7 @@ export class PlayerSprite extends GameObjects.Container {
 	textureKey: string = 'fighter';
 	action: string = 'Player';
 	actionDescription: string = '';
+	isHover: boolean = false;
 
 	private usernameText: GameObjects.Text;
 	private playerSprite: GameObjects.Sprite;
@@ -65,11 +66,17 @@ export class PlayerSprite extends GameObjects.Container {
 		this.add(this.usernameText);
 
 		this.playerSprite.on('pointerover', () => {
+			if (this.isHover) return;
+
+			this.isHover = true;
 			this.usernameText.setVisible(true);
 			scene.updateActionText(this.action, this.actionDescription);
 		});
 
 		this.playerSprite.on('pointerout', () => {
+			if (!this.isHover) return;
+
+			this.isHover = false;
 			this.usernameText.setVisible(false);
 			scene.updateActionText('', '');
 		});
@@ -136,8 +143,21 @@ export class PlayerSprite extends GameObjects.Container {
 		} else {
 			// Update position during movement
 			const progress = this.movementProgress / tileWidth;
-			this.x = Phaser.Math.Linear(this.tileX * tileWidth, this.targetTileX * tileWidth, progress);
-			this.y = Phaser.Math.Linear(this.tileY * tileWidth, this.targetTileY * tileWidth, progress);
+			this.x = Math.floor(
+				Phaser.Math.Linear(
+					this.tileX * tileWidth,
+					this.targetTileX * tileWidth,
+					Number(progress.toFixed(2))
+				)
+			);
+			this.y = Math.floor(
+				Phaser.Math.Linear(
+					this.tileY * tileWidth,
+					this.targetTileY * tileWidth,
+					Number(progress.toFixed(2))
+				)
+			);
+			console.log(this.x, this.y);
 		}
 
 		return false;

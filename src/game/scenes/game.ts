@@ -23,6 +23,7 @@ export class Game extends Scene {
 	private isAttackKeyDown: boolean = false;
 	private lastAttackTime: number = 0;
 	private contextMenu: Phaser.GameObjects.DOMElement | null = null;
+	private lastUpdate: number = 0;
 
 	constructor() {
 		super('Game');
@@ -56,14 +57,15 @@ export class Game extends Scene {
 
 		// Set up camera
 		this.cameras.main.setZoom(1);
-		this.cameras.main.startFollow(this.player, true);
-		this.cameras.main.setRoundPixels(true);
+		this.cameras.main.startFollow(this.player, false);
+		this.cameras.main.setRoundPixels(false);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
 
 		// Render UI
 		this.scene.launch('NativeUI');
 
 		this.cursors = this.input.keyboard!.createCursorKeys();
+		this.input.setPollOnMove();
 		this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
 		this.map.on('tileclick', this.handleTileClick, this);
@@ -94,13 +96,13 @@ export class Game extends Scene {
 	};
 
 	onWindowFocus() {
-		this.cursors = this.input.keyboard!.createCursorKeys();
-		this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+		// this.cursors = this.input.keyboard!.createCursorKeys();
+		// this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 	}
 
 	onWindowBlur() {
 		// Remove active keydown events when the window loses focus
-		this.input.keyboard?.resetKeys();
+		// this.input.keyboard?.resetKeys();
 	}
 
 	createNPC(spriteKey: string, tileX: number, tileY: number, name: string) {
@@ -117,13 +119,9 @@ export class Game extends Scene {
 		return player;
 	}
 	update(time: number, delta: number) {
-		if (
-			this.map.activeTile &&
-			this.map.activeTile.x === this.player.tileX &&
-			this.map.activeTile.y === this.player.tileY
-		) {
-			this.map.emit('navigationend');
-		}
+		if (time - this.lastUpdate < 16) return;
+
+		this.lastUpdate = time;
 
 		if (this.inputEnabled) {
 			this.handlePlayerInput(time);
@@ -134,10 +132,23 @@ export class Game extends Scene {
 			this.handleShooting();
 		}
 
+		if (
+			this.map.activeTile &&
+			this.map.activeTile.x === this.player.tileX &&
+			this.map.activeTile.y === this.player.tileY
+		) {
+			this.map.emit('navigationend');
+		}
+
 		this.npcs.forEach((npc) => npc.update());
 	}
 
 	handleContextMenu = (object: NPC | PlayerSprite) => {
+		if (this.player === object) {
+			// don't need to show context menu for own player
+			return;
+		}
+
 		ui.handleContextAction('open', {
 			name: object.name
 		});

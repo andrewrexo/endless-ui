@@ -9,6 +9,7 @@ export class NPC extends GameObjects.Container {
 	private nameText: GameObjects.Text;
 	private action: string;
 	private text: string;
+	private isHover: boolean = false;
 	public tileX: number;
 	public tileY: number;
 	public name: string;
@@ -35,12 +36,18 @@ export class NPC extends GameObjects.Container {
 		this.add(this.sprite);
 
 		this.sprite.on('pointerover', () => {
+			if (this.isHover) return;
+
+			this.isHover = true;
 			this.borderSprite.setVisible(true);
 			this.nameText.setVisible(true);
 			scene.updateActionText(this.action, this.text);
 		});
 
 		this.sprite.on('pointerout', () => {
+			if (!this.isHover) return;
+
+			this.isHover = false;
 			this.borderSprite.setVisible(false);
 			this.nameText.setVisible(false);
 			scene.updateActionText('', '');

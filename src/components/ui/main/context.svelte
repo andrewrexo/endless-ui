@@ -45,7 +45,7 @@
 	{#if ui.contextMenuState}
 		<div class="w-full flex justify-between">
 			<span class="text-sm uppercase text-slate-300">{ui.contextMenuState.name ?? ''}</span>
-			<span class="text-xs font-bold text-primary"><ui.contextMenuState.identifier /></span>
+			<span class="text-xs font-bold text-primary flex"><ui.contextMenuState.identifier /> 99</span>
 		</div>
 		{#each options as option}
 			<button
