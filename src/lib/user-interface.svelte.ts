@@ -2,7 +2,7 @@ import { createRawSnippet, type Component, type Snippet } from 'svelte';
 import UserInteract from '../components/icons/user-interact.svelte';
 import { menuOptions } from './context';
 
-export type ButtonTarget = 'chat' | 'players' | 'settings' | 'context';
+export type ButtonTarget = 'chat' | 'players' | 'settings' | 'context' | 'inventory';
 export type ButtonAction = 'toggle' | 'open' | 'close';
 
 export const contextMenuOptions = ['View equipment', 'Add as friend', 'Send message'] as const;
@@ -34,6 +34,7 @@ export function createUserInterface() {
 		chat: false,
 		players: false,
 		settings: false,
+		inventory: false,
 		context: false
 	});
 
