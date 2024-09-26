@@ -28,7 +28,7 @@
 		<button
 			onclick={() => ui.handleButtonAction(button.target, button.action as ButtonAction)}
 			transition:fly={{ x: 100, duration: 300, delay: index * 100 }}
-			class="btn btn-primary btn-sm px-2"
+			class="btn hover:brightness-125 transition-all hover:scale-105 btn-sm px-2"
 		>
 			{@render button.icon({ size: 32 })}
 		</button>

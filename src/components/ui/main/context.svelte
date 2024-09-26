@@ -66,7 +66,6 @@
 	}
 
 	.option {
-		font-family: 'Monogram';
-		@apply cursor-pointer text-sm hover:text-slate-300 select-none;
+		@apply cursor-pointer hover:text-slate-300 select-none text-xs;
 	}
 </style>

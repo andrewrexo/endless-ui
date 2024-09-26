@@ -25,16 +25,17 @@
 	in:fly={{ duration: 300, y: 20 }}
 	out:fly={{ duration: 300, y: 20 }}
 	style="position: absolute; left: {position.x}px; top: {position.y}px;"
-	class="chat-container bg-base-200/80 w-[360px] rounded-lg p-2 px-1 overflow-hidden pointer-events-auto cursor-grab"
+	class="chat-container bg-base-200/80 w-[360px] rounded-lg p-2 px-0 overflow-hidden pointer-events-auto cursor-grab"
 >
 	<div bind:this={chatbox} class="chat-messages overflow-y-auto h-[140px] pr-2 space-y-1">
 		{#each chatState.messages as message}
 			<div class="rounded-lg px-[0.7rem]">
 				<div
-					class={`chat-header leading-none text-md ${message.sender === 'shrube' ? 'text-primary' : ''}`}
+					class={`chat-header leading-none text-md ${message.sender === 'shrube' ? 'text-secondary/80' : 'text-slate-200'}`}
 				>
+					<time class="text-sm leading-none opacity-50 text-slate-100">{message.timestamp}</time>
+
 					{message.sender}
-					<time class="text-xs leading-none opacity-50">{message.timestamp}</time>
 				</div>
 				<div class="flex items-center w-full text-md text-slate-300">
 					<p>{message.content}</p>
@@ -46,6 +47,8 @@
 
 <style lang="postcss">
 	.chat-messages {
+		font-family: 'Abaddon';
+		font-size: 0.75rem;
 		scrollbar-width: thin;
 		scrollbar-color: theme(colors.neutral) theme(colors.base-300);
 	}
