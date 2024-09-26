@@ -17,7 +17,7 @@
 	let componentPositions = $state([
 		{ id: 'chat', x: 5, y: 388 },
 		{ id: 'context', x: 0, y: 0 },
-		{ id: 'inventory', x: 645, y: 365 }
+		{ id: 'inventory', x: 655, y: 360 }
 	]);
 
 	let interfaceHotkeys = $state([
@@ -31,7 +31,13 @@
 		let isDragging = false;
 
 		function handleMouseDown(event: MouseEvent) {
+			// @ts-ignore
+			if (event.target && event.target.id.includes('inventory-item')) {
+				return;
+			}
+
 			isDragging = true;
+
 			const component = componentPositions.find((c) => c.id === componentId);
 			if (component) {
 				startX = event.clientX - component.x;
@@ -96,6 +102,7 @@
 			}
 		}
 
+		// @ts-ignore
 		if (event.target && event.target.type === 'text') {
 			return;
 		}
@@ -186,7 +193,7 @@
 				}}
 				type="text"
 				placeholder="Chat..."
-				class="select-none focus:outline-none grow bg-transparent text-slate-300"
+				class="select-none focus:outline-none grow text-sm pt-1 bg-transparent text-slate-300"
 				onfocus={() => {
 					isChatboxFocused = true;
 				}}
@@ -201,3 +208,9 @@
 		</span>
 	</div>
 </div>
+
+<style>
+	input {
+		font-family: 'Abaddon';
+	}
+</style>
