@@ -28,25 +28,11 @@
 
 <div
 	id="game-container"
-	class={`relative w-full h-full ${isInGame ? 'scale-100' : 'scale-125'} transition-all duration-300`}
+	class={`relative w-full h-full ${isInGame ? 'scale-100' : 'scale-150'} transition-all duration-500`}
 >
 	<UI />
 	<Context position={{ x: 0, y: 0 }} />
 </div>
 
 <style lang="postcss">
-	#game-container {
-		position: relative;
-		width: 800px;
-		height: 600px;
-	}
-
-	:global(canvas) {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 800px;
-		height: 600px;
-		z-index: -1;
-	}
 </style>

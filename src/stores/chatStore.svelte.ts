@@ -5,10 +5,7 @@ export type Message = {
 };
 
 function createChatState() {
-	let messages = $state<Message[]>([
-		{ sender: 'shrube', content: 'Welcome to the game!', timestamp: '10:00' },
-		{ sender: 'player1', content: 'thanks g ur a good one', timestamp: '10:02' }
-	]);
+	let messages = $state<Message[]>([]);
 
 	function addMessage(message: Message) {
 		messages = [...messages, message].slice(-10);

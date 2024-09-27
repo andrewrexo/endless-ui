@@ -22,23 +22,28 @@
 </script>
 
 <div
-	class="self-start pointer-events-auto flex flex-row gap-2 items-center text-gray-300 px-2 mt-2"
+	class="min-w-[150px] self-start pointer-events-auto h-2 flex flex-row gap-2 items-center text-slate-300"
 >
 	{#if action.actionName}
-		<span class="h-6">
+		<span class="h-6 mt-[1px]">
 			{@render actionIconSet.get(action.actionName)({ size: 16 })}
 		</span>
-		<div class="text-xl pointer-events-none action-text text-gray-300">
+		<div class="pointer-events-none action-text text-slate-300 flex gap-1">
 			{action.actionName}
-			<span class="text-primary text-lg font-medium">{action.actionDescription}</span>
+			<span class="text-primary text-md font-medium">{action.actionDescription}</span>
 		</div>
+	{:else}
+		<span class="h-6 mt-[1px]">
+			<Forward />
+		</span>
+		<span class="action-text">shrube</span>
 	{/if}
 </div>
 
 <style>
 	.action-text {
 		font-family: 'Abaddon';
-		font-size: 16px;
+		font-size: 14px;
 		font-weight: 300;
 	}
 </style>
