@@ -9,7 +9,8 @@ export type ButtonTarget =
 	| 'context'
 	| 'inventory'
 	| 'status'
-	| 'debug';
+	| 'debug'
+	| 'shop';
 
 export type ButtonAction = 'toggle' | 'open' | 'close';
 
@@ -45,7 +46,8 @@ export function createUserInterface() {
 		inventory: false,
 		context: false,
 		status: false,
-		debug: false
+		debug: false,
+		shop: false
 	});
 
 	let contextMenuState: ContextMenuState = $state({
