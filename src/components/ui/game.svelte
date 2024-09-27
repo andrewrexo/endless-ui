@@ -16,19 +16,21 @@
 	let isChatboxFocused = $state(false);
 	let chatboxInput: HTMLInputElement;
 
+	let pressedKeys = $state(new Set<string>());
 	let time = $state(new Date().getTime());
 
 	let componentPositions = $state([
-		{ id: 'chat', x: 5, y: 388 },
+		{ id: 'chat', x: 10, y: 378 },
 		{ id: 'context', x: 0, y: 0 },
-		{ id: 'inventory', x: 655, y: 385 }
+		{ id: 'inventory', x: 652, y: 378 },
+		{ id: 'debug', x: 14, y: 66 }
 	]);
 
 	let interfaceHotkeys = $state([
-		{ id: 'chat', hotkey: 'c', modifier: true },
-		{ id: 'inventory', hotkey: 'e', modifier: true },
-		{ id: 'status', hotkey: 's', modifier: true },
-		{ id: 'debug', hotkey: 'd', modifier: true }
+		{ id: 'chat', hotkey: 'c', modifier: false },
+		{ id: 'inventory', hotkey: 'i', modifier: false },
+		{ id: 'status', hotkey: 's', modifier: false },
+		{ id: 'debug', hotkey: 'd', modifier: false }
 	]);
 
 	function dragAction(node: HTMLElement, componentId: string) {
@@ -97,7 +99,17 @@
 		chatboxInput?.blur();
 	};
 
-	const handleGlobalKeyDown = (event: KeyboardEvent) => {
+	const handleKeyUp = (event: KeyboardEvent) => {
+		pressedKeys.delete(event.key);
+	};
+
+	const handleKeyPress = (event: KeyboardEvent) => {
+		if (pressedKeys.has(event.key)) {
+			return;
+		}
+
+		pressedKeys.add(event.key);
+
 		if (event.key === 'Enter') {
 			if (!isChatboxFocused) {
 				chatboxInput?.focus();
@@ -168,6 +180,7 @@
 			ui.handleButtonAction('chat', 'open');
 			ui.handleButtonAction('inventory', 'open');
 			ui.handleButtonAction('status', 'open');
+			ui.handleButtonAction('debug', 'open');
 		}, 500);
 
 		const fetchTime = setInterval(() => {
@@ -182,7 +195,8 @@
 </script>
 
 <svelte:window
-	on:keyup={handleGlobalKeyDown}
+	on:keydown={handleKeyPress}
+	on:keyup={handleKeyUp}
 	on:contextmenu={(e) => {
 		e.preventDefault();
 	}}
@@ -231,14 +245,7 @@
 		</div>
 	{/if}
 
-	{#if ui.interfaces.shop}
-		<Shop />
-		<div
-			class="pointer-events-auto absolute z-10 h-full w-full bg-black/50"
-			transition:fade={{ duration: 100 }}
-			onclick={() => ui.handleButtonAction('shop', 'close')}
-		></div>
-	{/if}
+	<Shop />
 
 	{#if ui.interfaces.chat}
 		<Chatbox
@@ -263,10 +270,13 @@
 	{/if}
 
 	{#if ui.interfaces.debug}
-		<Debug />
+		<Debug
+			dragAction={(node) => dragAction(node, 'debug')}
+			position={componentPositions.find((c) => c.id === 'debug') ?? { x: 0, y: 0 }}
+		/>
 	{/if}
 
-	<div class="mt-auto p-1">
+	<div class="mt-auto p-2">
 		<span
 			class="pointer-events-auto flex w-full items-center gap-2 rounded-lg bg-base-200/90 py-2 pl-4 pr-2 text-lg"
 		>
