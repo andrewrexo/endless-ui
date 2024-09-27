@@ -7,6 +7,10 @@ body {
 	padding: 0;
 }
 
+:root:has(:is(.modal-open, .modal:target, .modal-toggle:checked + .modal, .modal[open])) {
+	scrollbar-gutter: unset;
+}
+
 @keyframes pulse-glow {
 	0%,
 	100% {
@@ -25,12 +29,12 @@ body {
 	0% {
 		opacity: 1;
 		box-shadow: 0 0 10px oklch(var(--p));
-		@apply text-primary/80 scale-110;
+		@apply scale-110 text-primary/80;
 	}
 	100% {
 		opacity: 1;
 		box-shadow: 0 0 15px oklch(var(--p));
-		@apply text-primary scale-100;
+		@apply scale-100 text-primary;
 	}
 }
 
