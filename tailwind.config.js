@@ -21,7 +21,23 @@ export default {
 			'fantasy',
 			'lofi',
 			'retro',
-			'emerald'
+			'emerald',
+			'nord',
+			'night',
+			'sunset',
+			'winter',
+			'dracula',
+			'synthwave'
 		]
-	}
+	},
+	safelist: [
+		{
+			pattern:
+				/^bg-(primary|secondary|warning|info|pink|indigo|cyan|teal|lime|amber|orange|emerald|violet|fuchsia|rose|sky)-[1-9]00$/
+		},
+		{
+			pattern:
+				/^text-(primary|secondary|warning|info|purple|pink|indigo|cyan|teal|lime|amber|orange|emerald|violet|fuchsia|rose|sky)-[1-9]00$/
+		}
+	]
 };

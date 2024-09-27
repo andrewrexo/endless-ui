@@ -16,13 +16,13 @@
 
 	let onOptionClick = () => {
 		ui.handleButtonAction('context', 'close');
+		console.log('yo');
+		ui.handleButtonAction('shop', 'open');
 	};
 
 	let onMenuClick = () => {
 		ui.handleButtonAction('context', 'close');
 	};
-
-	$inspect(ui.contextMenuState);
 
 	let hidden = $derived(position.x == 0 || position.y == 0);
 </script>
@@ -40,12 +40,12 @@
 	id="context-menu"
 	class="{hidden && 'hidden'} absolute left-[{position.x -
 		110 /
-			2}px] bg-base-200/80 w-[110px] h-[{menuHeight}px] flex flex-col rounded-lg p-1 overflow-hidden pointer-events-none cursor-default"
+			2}px] w-[110px] bg-base-200/80 h-[{menuHeight}px] pointer-events-none flex cursor-default flex-col overflow-hidden rounded-lg p-1"
 >
 	{#if ui.contextMenuState}
-		<div class="w-full flex justify-between">
+		<div class="flex w-full justify-between">
 			<span class="text-sm uppercase text-slate-300">{ui.contextMenuState.name ?? ''}</span>
-			<span class="text-xs font-bold text-primary flex"><ui.contextMenuState.identifier /> 99</span>
+			<span class="flex text-xs font-bold text-primary"><ui.contextMenuState.identifier /> 99</span>
 		</div>
 		{#each options as option}
 			<button
@@ -54,7 +54,7 @@
 				}}
 				onfocus={() => {}}
 				class="option btn-ghost flex w-full"
-				onclick={onOptionClick}>- {option}</button
+				onmousedown={onOptionClick}>- {option}</button
 			>
 		{/each}
 	{/if}
@@ -66,6 +66,6 @@
 	}
 
 	.option {
-		@apply cursor-pointer hover:text-slate-300 select-none text-xs;
+		@apply cursor-pointer select-none text-xs hover:text-slate-300;
 	}
 </style>

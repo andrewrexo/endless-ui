@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { scale } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
+	import { ui } from '$lib/user-interface.svelte';
+	import { fade, fly } from 'svelte/transition';
 	import Card from '../icons/card.svelte';
 	import Close from '../icons/close.svelte';
 	import Coin from '../icons/coin.svelte';
@@ -14,12 +14,14 @@
 
 	let shopCount = $state(8);
 
-	let rarityToColorMap = new Map([
-		['common', 'base-content/75'],
-		['uncommon', 'secondary'],
-		['rare', 'info'],
-		['epic', 'primary']
-	]);
+	let rarityToColorMap = $state(
+		new Map([
+			['common', 'text-[#D2B48C]'],
+			['uncommon', 'text-info/50'],
+			['rare', 'text-secondary/50'],
+			['epic', 'text-primary/50']
+		])
+	);
 
 	let items: ShopItem[] = $state([
 		{
@@ -29,16 +31,6 @@
 			rarity: 'Common'
 		}
 	]);
-
-	let hoveredItem = $state(null);
-
-	function handleMouseEnter(item: ShopItem) {
-		hoveredItem = item;
-	}
-
-	function handleMouseLeave() {
-		hoveredItem = null;
-	}
 
 	$effect(() => {
 		items = Array.from({ length: shopCount }, (_, i) => ({
@@ -50,46 +42,53 @@
 	});
 </script>
 
+{#snippet shopItemRarity(rarity: string)}
+	<span class="text-sm font-light capitalize {rarityToColorMap.get(rarity)}">{rarity}</span>
+{/snippet}
+
 {#snippet shopItemPrice(price: number)}
-	<div class="badge badge-warning badge-xs gap-1 mono">
-		<Coin size={8} />
-		<span class="mb-[2px]">
+	<div class="mono badge badge-warning badge-xs mb-1 gap-1">
+		<Coin size={10} />
+		<span class="mt-1">
 			{price}
 		</span>
 	</div>
 {/snippet}
 
+{#snippet shopItemDescription(description: string)}
+	<span class="text-xs text-base-content/70">{description} </span>
+{/snippet}
+
 {#snippet shopItem(item: ShopItem)}
-	{#key hoveredItem === item}
-		<button
-			class="bg-base-200 rounded-lg p-2 h-16 w-full flex gap-4 hover:bg-base-300 transition-all duration-300"
-			onmouseenter={() => handleMouseEnter(item)}
-			onmouseleave={handleMouseLeave}
-			transition:scale={{ duration: 200, easing: quintOut, start: 0.95, opacity: 1 }}
-		>
-			<div class="flex w-full gap-4">
-				<div class="w-12 h-12 bg-base-content rounded-lg">img</div>
-				<div class="flex flex-col w-full h-full">
-					<div class="flex justify-between w-full header items-start">
-						<div class="text-xl">
-							{item.name}
-						</div>
-						<div class="text-xs flex items-start gap-2">
-							{@render shopItemPrice(item.price)}
-							<span class="text-{rarityToColorMap.get(item.rarity)}"> {item.rarity} </span>
-						</div>
+	<button
+		transition:fly={{ duration: 100, y: -100 }}
+		class="btn flex h-16 w-full gap-4 rounded-lg bg-base-100 p-2 transition-all duration-300 hover:scale-[1.02] hover:bg-base-content/20"
+	>
+		<div class="flex w-full gap-4">
+			<div class="flex h-12 w-16 items-center justify-center rounded-lg bg-base-300/50">
+				<img class="h-[28px] w-[28px] scale-150" src={`/assets/red-glove.png`} alt={item.name} />
+			</div>
+			<div class="flex h-full w-full flex-col items-start justify-between">
+				<div class="header flex w-full items-center justify-between">
+					<div class="text-xl">
+						{item.name}
 					</div>
-					<div class="w-full blockgap-1">
-						<span class="text-xs text-base-content/70">{item.description} </span>
+					<div class="mb-1 flex items-center gap-2">
+						{@render shopItemPrice(item.price)}
 					</div>
 				</div>
+				<div class="flex w-full justify-between font-light">
+					{@render shopItemDescription(item.description)}
+					{@render shopItemRarity(item.rarity)}
+				</div>
 			</div>
-		</button>
-	{/key}
+		</div>
+	</button>
 {/snippet}
 
 <div
-	class="h-[380px] absolute w-4/5 left-[80px] top-[105px] z-50 bg-base-100 rounded-lg p-3 pointer-events-auto flex flex-col justify-between"
+	class="pointer-events-auto absolute left-[80px] top-[105px] z-50 flex h-[380px] w-4/5 flex-col justify-between rounded-lg bg-neutral p-3 transition-all duration-300"
+	transition:fade={{ duration: 200 }}
 >
 	<div class="header flex justify-between pb-2">
 		<div class="flex gap-2">
@@ -101,22 +100,25 @@
 		</div>
 		<div class="flex gap-2">
 			<button
-				class="bg-base-content/20 rounded-full p-1 h-6 animate-spin-active"
+				class="animate-spin-active btn btn-circle btn-xs rounded-full bg-base-content/20 p-1 focus:ring-0 active:ring-0"
 				aria-label="Close shop"
+				onclick={() => {
+					ui.handleButtonAction('shop', 'close');
+				}}
 			>
 				<Close />
 			</button>
 		</div>
 	</div>
-	<div class="grid grid-cols-2 gap-2 shop-items w-full">
+	<div class="shop-items grid w-full grid-cols-2 gap-2">
 		{#each items as item}
-			{@render shopItem(item)}
+			{#key items.length >= 0}
+				{@render shopItem(item)}
+			{/key}
 		{/each}
 	</div>
-	<div class="flex justify-end mt-auto">
-		<button class="btn btn-primary h-8 hover:scale-105 min-h-8 text-black text-md text-xl"
-			>Buy</button
-		>
+	<div class="mt-auto flex justify-end">
+		<button class="text-md btn-neutral/30 btn h-8 min-h-8 text-xl hover:scale-105">Buy</button>
 	</div>
 </div>
 
@@ -128,7 +130,9 @@
 	}
 
 	.mono {
-		font-family: 'Monogram';
-		font-size: 1.1rem;
+		color: #684c06;
+		font-family: 'Abaddon';
+		font-size: 0.85rem;
+		@apply font-light tracking-normal;
 	}
 </style>
