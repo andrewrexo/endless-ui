@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { ui } from '$lib/user-interface.svelte';
-	import { fade, fly, scale } from 'svelte/transition';
 	import Card from '../icons/card.svelte';
 	import Close from '../icons/close.svelte';
 	import Coin from '../icons/coin.svelte';
+	import Modal from './primitives/modal.svelte';
 
 	interface ShopItem {
 		name: string;
@@ -13,28 +13,8 @@
 	}
 
 	let shopCount = $state(8);
-	let sendBehind = $state(false);
 
-	$effect(() => {
-		if (!ui.interfaces.shop) {
-			setTimeout(() => {
-				sendBehind = true;
-			}, 200);
-		} else {
-			sendBehind = false;
-		}
-	});
-
-	let rarityToColorMap = $state(
-		new Map([
-			['common', 'text-[#D2B48C]'],
-			['uncommon', 'text-info/50'],
-			['rare', 'text-secondary/50'],
-			['epic', 'text-primary/50']
-		])
-	);
-
-	let items: ShopItem[] = $state(
+	let items: ShopItem[] = $derived(
 		Array.from({ length: shopCount }, (_, i) => ({
 			name: `Item ${i + 1}`,
 			description: `Description for Item ${i + 1}`,
@@ -42,19 +22,10 @@
 			rarity: ['common', 'uncommon', 'rare', 'epic'][Math.floor(Math.random() * 4)]
 		}))
 	);
-
-	$effect(() => {
-		const shopModal = document.getElementById('shop-modal') as HTMLDialogElement;
-		ui.interfaces.shop && shopModal ? shopModal.showModal() : shopModal.close();
-	});
 </script>
 
-{#snippet shopItemRarity(rarity: string)}
-	<span class="text-sm font-light capitalize {rarityToColorMap.get(rarity)}">{rarity}</span>
-{/snippet}
-
 {#snippet shopItemPrice(price: number)}
-	<div class="mono badge badge-warning badge-xs mb-1 gap-1">
+	<div class="mono badge-xs mb-1 flex items-center gap-1">
 		<Coin size={10} />
 		<span class="mt-1">
 			{price}
@@ -87,57 +58,64 @@
 	</button>
 {/snippet}
 
-<dialog id="shop-modal" class:-z-50={sendBehind} class="modal">
-	<div
-		class="modal-box pointer-events-auto z-50 flex min-w-[600px] flex-col justify-between gap-2 rounded-lg bg-neutral p-3"
-	>
-		<div class="header flex justify-between pb-2">
-			<div class="flex gap-2">
-				<Card size={20} />
-				<div class="title text-xl">
-					<span class="text-primary/70">Jim's</span>
-					Shop
-				</div>
-			</div>
-			<div class="flex gap-2">
-				<button
-					class="animate-spin-active btn btn-circle btn-xs rounded-full bg-base-content/20 p-1 focus:ring-0 focus-visible:ring-0 active:ring-0"
-					aria-label="Close shop"
-					onclick={() => {
-						ui.handleButtonAction('shop', 'close');
-					}}
-				>
-					<Close />
-				</button>
+<Modal componentId="shop">
+	<div class="header flex justify-between pb-2">
+		<div class="flex items-center gap-2">
+			<div class="flex gap-1 text-secondary">
+				<Card size={18} />
+
+				<span class="text-accent">Jim's</span>
+				<span class="">Shop</span>
 			</div>
 		</div>
-		<div class="shop-items grid w-full grid-cols-2 gap-2">
-			{#each items as item}
-				{@render shopItem(item)}
-			{/each}
-		</div>
-		<div class="mt-auto flex justify-end pt-1">
-			<button class="btn h-8 min-h-8 bg-base-200 text-lg hover:scale-105 hover:bg-base-100">
-				Buy
+		<div class="flex gap-2">
+			<button
+				class="animate-spin-active btn btn-circle btn-xs rounded-full"
+				aria-label="Close shop"
+				onclick={() => {
+					ui.handleButtonAction('shop', 'close');
+				}}
+			>
+				<Close size={18} />
 			</button>
 		</div>
 	</div>
-	<form method="dialog" class="modal-backdrop">
-		<button onclick={() => ui.handleButtonAction('shop', 'close')}>close</button>
-	</form>
-</dialog>
+	<div class="shop-items grid w-full grid-cols-2 gap-2">
+		{#each items as item}
+			{@render shopItem(item)}
+		{/each}
+	</div>
+	<div class="mt-auto flex justify-end pt-1">
+		<button class="rounded-sl text-transparent hover:scale-105"
+			><span class="text-lg text-accent">Buy</span>
+		</button>
+	</div>
+</Modal>
 
-<style>
+<style lang="postcss">
 	.header,
 	.shop-items,
 	button {
 		font-family: 'Abaddon';
 	}
 
+	button:active,
+	button:focus,
+	button:focus-visible {
+		@apply ring-0;
+	}
+
+	.gradient-text {
+		@apply box-decoration-clone bg-clip-text text-transparent;
+		/* Direction */
+		@apply bg-gradient-to-br;
+		/* Color Stops */
+		@apply from-secondary via-accent to-info;
+	}
+
 	.mono {
-		color: #684c06;
 		font-family: 'Abaddon';
-		font-size: 0.85rem;
-		@apply font-light tracking-normal;
+		font-size: 0.9rem;
+		@apply font-light tracking-widest text-warning;
 	}
 </style>
