@@ -1,12 +1,14 @@
-import { createRawSnippet, type Component, type Snippet } from 'svelte';
+import { type Component } from 'svelte';
 import UserInteract from '../components/icons/user-interact.svelte';
 import { menuOptions } from './context';
+import type { Position } from '$lib';
+import { action } from '../components/ui/main/action.svelte';
+import { EventBus } from '../game/event-bus';
 
 export type ButtonTarget =
 	| 'chat'
 	| 'players'
 	| 'settings'
-	| 'context'
 	| 'inventory'
 	| 'status'
 	| 'debug'
@@ -23,7 +25,7 @@ export interface MenuOption {
 	icon?: Component;
 	option: string;
 	emit?: ContextMenuOption;
-	callback?: () => void;
+	callback: () => void;
 }
 
 export interface InterfaceProps {
@@ -44,7 +46,6 @@ export function createUserInterface() {
 		players: false,
 		settings: false,
 		inventory: false,
-		context: false,
 		status: false,
 		debug: false,
 		shop: false
@@ -70,6 +71,7 @@ export function createUserInterface() {
 	function closeInterface(target: ButtonTarget) {
 		interfaces[target] = false;
 	}
+
 	function handleContextAction(
 		action: ContextMenuOption | ButtonAction,
 		props?: Partial<ContextMenuState>
@@ -77,11 +79,17 @@ export function createUserInterface() {
 		switch (action) {
 			case 'open': {
 				if (props) {
-					contextMenuState = { ...contextMenuState, open: true, ...props };
+					contextMenuState = { ...contextMenuState, ...props };
 				}
+
+				contextMenuState.open = true;
+				console.log('opening context menu');
+				break;
 			}
 			case 'close': {
 				contextMenuState.open = false;
+				console.log('closing context menu');
+				break;
 			}
 		}
 	}
@@ -100,6 +108,13 @@ export function createUserInterface() {
 		}
 	}
 
+	function updateComponentPosition(index: number, position: Position) {
+		componentPositions[index] = {
+			...componentPositions[index],
+			...position
+		};
+	}
+
 	let buttons = $derived(
 		Object.entries(interfaces).map(([target, isOpen]) => ({
 			target: target as ButtonTarget,
@@ -108,9 +123,59 @@ export function createUserInterface() {
 		}))
 	);
 
+	let componentPositions = $state([
+		{ id: 'chat', x: 10, y: 382 },
+		{ id: 'context', x: 0, y: 0 },
+		{ id: 'inventory', x: 647, y: 382 },
+		{ id: 'debug', title: 'Debug', x: 15, y: 45 }
+	]);
+
+	let interfaceHotkeys = $state([
+		{ id: 'chat', hotkey: 'c', modifier: false },
+		{ id: 'inventory', hotkey: 'i', modifier: false },
+		{ id: 'status', hotkey: 's', modifier: false },
+		{ id: 'debug', hotkey: 'd', modifier: false }
+	]);
+
+	function hidePanel() {
+		action.action = { action: '', text: '' };
+
+		const prioritized = ['shop', 'context', 'chat', 'inventory', 'debug'];
+		const allInterfaces = Object.entries(interfaces);
+
+		if (contextMenuState.open) {
+			EventBus.emit('context-hide');
+			return;
+		}
+
+		// Close prioritized interfaces first
+		for (const target of prioritized) {
+			if (interfaces[target as ButtonTarget]) {
+				handleButtonAction(target as ButtonTarget, 'close');
+				return;
+			}
+		}
+
+		// Close any remaining open interface
+		for (const [target, isOpen] of allInterfaces) {
+			if (isOpen && !prioritized.includes(target)) {
+				handleButtonAction(target as ButtonTarget, 'close');
+				return;
+			}
+		}
+	}
+
 	return {
 		handleButtonAction,
 		handleContextAction,
+		updateComponentPosition,
+		hidePanel,
+		get interfaceHotkeys() {
+			return interfaceHotkeys;
+		},
+		get componentPositions() {
+			return componentPositions;
+		},
 		get interfaces() {
 			return interfaces;
 		},

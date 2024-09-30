@@ -1,71 +1,69 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
-	import { ui } from '../../../lib/user-interface.svelte';
+	import { ui, type MenuOption } from '../../../lib/user-interface.svelte';
 	import { action } from './action.svelte';
-	import { split } from 'postcss/lib/list';
 	import { EventBus } from '../../../game/event-bus';
+	import { menuOptions } from '$lib/context';
 
-	type ContextGameData = {
-		name: string;
-	};
-
-	let { position }: { position: { x: number; y: number } } = $props();
-
-	let options = $state(['View equipment', 'Add as friend', 'Send message']);
-	let menuHeight = $derived(options.length * 26);
+	let menuHeight = menuOptions.length * 26;
 
 	let onOptionClick = () => {
-		ui.handleButtonAction('context', 'close');
-		console.log('yo');
+		ui.handleContextAction('close');
 		ui.handleButtonAction('shop', 'open');
 	};
 
-	let onMenuClick = () => {
-		ui.handleButtonAction('context', 'close');
+	const onOptionMouseDown = (option: MenuOption) => {
+		onOptionClick();
+		option.callback();
 	};
 
-	let hidden = $derived(position.x == 0 || position.y == 0);
+	$inspect(ui);
+
+	const updateAction = (option: string) => {
+		action.action = { action: option, text: ui.contextMenuState.name };
+	};
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
-	in:fly={{ duration: 300, y: -20 }}
-	out:fly={{ duration: 300, y: -10 }}
 	bind:this={ui.contextMenu}
+	role="button"
+	tabindex={0}
+	id="context-menu"
 	onmouseleave={() => {
 		EventBus.emit('context-hide');
 	}}
-	onclick={onMenuClick}
-	id="context-menu"
-	class="{hidden && 'hidden'} absolute left-[{position.x -
-		110 /
-			2}px] w-[110px] bg-base-200/80 h-[{menuHeight}px] pointer-events-none flex cursor-default flex-col overflow-hidden rounded-lg p-1"
+	onkeydown={() => {}}
+	class="absolute w-[110px] bg-base-200/80 h-[{menuHeight}px] pointer-events-none flex cursor-default flex-col overflow-hidden rounded-lg"
 >
-	{#if ui.contextMenuState}
-		<div class="flex w-full justify-between">
-			<span class="text-sm uppercase text-slate-300">{ui.contextMenuState.name ?? ''}</span>
+	{#if ui.contextMenuState.open}
+		<div class="flex w-full justify-between p-1">
+			<span class="text-sm uppercase">{ui.contextMenuState.name ?? ''}</span>
 			<span class="flex text-xs font-bold text-primary"><ui.contextMenuState.identifier /> 99</span>
 		</div>
-		{#each options as option}
+		{#each menuOptions as o}
 			<button
 				onmouseover={() => {
-					action.action = { action: option, text: ui.contextMenuState.name };
+					updateAction(o.option);
 				}}
-				onfocus={() => {}}
-				class="option btn-ghost flex w-full"
-				onmousedown={onOptionClick}>- {option}</button
+				onfocus={() => {
+					updateAction(o.option);
+				}}
+				class="option"
+				onmousedown={() => {
+					onOptionMouseDown(o);
+				}}
 			>
+				{o.option}
+			</button>
 		{/each}
 	{/if}
 </div>
 
-<style>
+<style lang="postcss">
 	div {
 		font-family: 'Abaddon';
 	}
 
 	.option {
-		@apply cursor-pointer select-none text-xs hover:text-slate-300;
+		@apply w-full cursor-pointer select-none p-1 py-1 text-left text-xs hover:bg-base-200 hover:text-slate-300;
 	}
 </style>
