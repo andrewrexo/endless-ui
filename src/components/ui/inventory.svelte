@@ -1,8 +1,4 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
-	import Target from '../icons/target.svelte';
-	import Bag from '../icons/bag.svelte';
-	import type { Component } from 'svelte';
 	import Forward from '../icons/forward.svelte';
 	import Panel from './primitives/panel.svelte';
 
@@ -40,7 +36,7 @@
 	</div>
 {/snippet}
 
-<Panel componentId="inventory" className="p-2">
+<Panel componentId="inventory" className="p-2" flyParams={{ x: 60 }}>
 	<div class="grid h-full w-full cursor-auto grid-cols-3 grid-rows-4 place-items-center gap-1">
 		{#each gridSquares as square, index}
 			{@render square(index, items[index])}

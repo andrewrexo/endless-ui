@@ -17,7 +17,7 @@
 	});
 </script>
 
-<Panel componentId="status" fixed={true} className="mt-2">
+<Panel componentId="status" fixed={true} className="mt-2" flyParams={{ y: -50 }}>
 	<div class="flex items-center">
 		<span
 			class="text-abaddon pointer-events-auto flex h-1 w-full min-w-[190px] items-center gap-2 rounded-lg px-2"

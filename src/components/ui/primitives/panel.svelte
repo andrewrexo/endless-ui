@@ -2,7 +2,7 @@
 	import dragAction from '$lib/ui/panels';
 	import { ui } from '$lib/user-interface.svelte';
 	import type { Component, Snippet } from 'svelte';
-	import { fly } from 'svelte/transition';
+	import { fly, type FlyParams } from 'svelte/transition';
 	import type { HTMLAttributes } from 'svelte/elements';
 
 	interface PanelProps extends HTMLAttributes<HTMLDivElement> {
@@ -11,6 +11,7 @@
 		componentId: string;
 		width?: string;
 		height?: string;
+		flyParams?: FlyParams;
 		className?: string;
 	}
 
@@ -20,6 +21,7 @@
 		componentId = '',
 		width = '180',
 		height = '120',
+		flyParams = { duration: 300, x: -20 },
 		className = '',
 		...props
 	}: PanelProps = $props();
@@ -32,7 +34,7 @@
 
 <div
 	use:drag
-	transition:fly={{ duration: 300, x: -20 }}
+	transition:fly={flyParams}
 	class="pointer-events-auto flex flex-col gap-1 rounded-lg bg-base-300/80 {className}"
 	style={!fixed
 		? `${componentId != 'context' ? `position: absolute; left: ${position.x}px; top: ${position.y}px;` : ''} width: ${width}; height: ${height}`
