@@ -1,12 +1,6 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
 	import { chatbox as chatState } from '../../../stores/chatStore.svelte';
 	import Panel from '../primitives/panel.svelte';
-
-	let {
-		dragAction,
-		position
-	}: { dragAction: (node: HTMLElement) => void; position: { x: number; y: number } } = $props();
 
 	let chatbox: HTMLDivElement;
 
@@ -29,7 +23,7 @@
 		{#each chatState.messages as message}
 			<div class="w-full rounded-lg px-[0.7rem]">
 				<div
-					class={`chat-header leading-none ${message.sender === 'shrube' ? 'text-secondary/80' : 'text-slate-200'}`}
+					class={`chat-header leading-none ${message.sender === 'shrube' ? 'text-initial' : 'text-slate-200'}`}
 				>
 					<time class="leading-none text-slate-100 opacity-50">{message.timestamp}</time>
 					{message.sender}
@@ -45,7 +39,7 @@
 <style lang="postcss">
 	.chat-messages {
 		font-family: 'Abaddon';
-		font-size: 0.75rem;
+		font-size: 0.85rem;
 		scrollbar-width: thin;
 		scrollbar-color: theme(colors.neutral) theme(colors.base-300);
 	}
