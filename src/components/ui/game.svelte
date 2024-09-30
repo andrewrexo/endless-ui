@@ -11,82 +11,15 @@
 	import { fade, fly } from 'svelte/transition';
 	import Shop from './shop.svelte';
 	import Debug from './tools/debug.svelte';
+	import dragAction from '$lib/ui/panels';
+	import Panel from './primitives/panel.svelte';
+	import Status from './status.svelte';
 
 	let chatboxText = $state('');
 	let isChatboxFocused = $state(false);
 	let chatboxInput: HTMLInputElement;
 
 	let pressedKeys = $state(new Set<string>());
-	let time = $state(new Date().getTime());
-
-	let componentPositions = $state([
-		{ id: 'chat', x: 10, y: 378 },
-		{ id: 'context', x: 0, y: 0 },
-		{ id: 'inventory', x: 652, y: 378 },
-		{ id: 'debug', x: 14, y: 66 }
-	]);
-
-	let interfaceHotkeys = $state([
-		{ id: 'chat', hotkey: 'c', modifier: false },
-		{ id: 'inventory', hotkey: 'i', modifier: false },
-		{ id: 'status', hotkey: 's', modifier: false },
-		{ id: 'debug', hotkey: 'd', modifier: false }
-	]);
-
-	function dragAction(node: HTMLElement, componentId: string) {
-		let startX: number;
-		let startY: number;
-		let isDragging = false;
-
-		function handleMouseDown(event: MouseEvent) {
-			// @ts-ignore
-			if (event.target && event.target.id.includes('inventory-item')) {
-				return;
-			}
-
-			isDragging = true;
-
-			const component = componentPositions.find((c) => c.id === componentId);
-			if (component) {
-				startX = event.clientX - component.x;
-				startY = event.clientY - component.y;
-			}
-
-			event.preventDefault();
-		}
-
-		function handleMouseMove(event: MouseEvent) {
-			node.style.cursor = 'grab';
-
-			if (!isDragging) return;
-
-			const index = componentPositions.findIndex((c) => c.id === componentId);
-			if (index !== -1) {
-				componentPositions[index] = {
-					...componentPositions[index],
-					x: event.clientX - startX,
-					y: event.clientY - startY
-				};
-			}
-		}
-
-		function handleMouseUp() {
-			isDragging = false;
-			node.style.cursor = 'grab';
-		}
-
-		node.addEventListener('mousedown', handleMouseDown);
-		window.addEventListener('mousemove', handleMouseMove);
-		window.addEventListener('mouseup', handleMouseUp);
-
-		return {
-			destroy() {
-				node.removeEventListener('mousedown', handleMouseDown);
-				window.removeEventListener('mousemove', handleMouseMove);
-				window.removeEventListener('mouseup', handleMouseUp);
-			}
-		};
-	}
 
 	const sendMessage = () => {
 		EventBus.emit('chatbox:send', chatboxText);
@@ -131,41 +64,16 @@
 		}
 
 		if (event.key === 'Escape') {
-			EventBus.emit('context-hide');
-			action.action = { action: '', text: '' };
-
-			const prioritized = ['shop', 'chat', 'inventory', 'status'];
-			const allInterfaces = Object.entries(ui.interfaces);
-
-			// Close prioritized interfaces first
-			for (const target of prioritized) {
-				if (ui.interfaces[target as ButtonTarget]) {
-					ui.handleButtonAction(target as ButtonTarget, 'close');
-					return;
-				}
-			}
-
-			// Close any remaining open interface
-			for (const [target, isOpen] of allInterfaces) {
-				if (isOpen && !prioritized.includes(target)) {
-					ui.handleButtonAction(target as ButtonTarget, 'close');
-					return;
-				}
-			}
+			ui.hidePanel();
 		}
 
-		const activeHotkey = interfaceHotkeys.find((value) => {
+		const activeHotkey = ui.interfaceHotkeys.find((value) => {
 			const isHotkey = value.hotkey === event.key;
 			return isHotkey && (value.modifier ? event.ctrlKey : true);
 		});
 
 		if (activeHotkey) {
 			ui.handleButtonAction(activeHotkey.id as ButtonTarget, 'toggle');
-		}
-
-		if (event.key === ' ' && isChatboxFocused) {
-			// Prevent space from triggering game actions when chat is focused
-			event.preventDefault();
 		}
 	};
 
@@ -183,12 +91,7 @@
 			ui.handleButtonAction('debug', 'open');
 		}, 500);
 
-		const fetchTime = setInterval(() => {
-			time = time = new Date().getTime();
-		}, 1000);
-
 		return () => {
-			clearInterval(fetchTime);
 			clearTimeout(showUi);
 		};
 	});
@@ -202,47 +105,11 @@
 	}}
 />
 
-<div class="pointer-events-none absolute flex h-full w-full select-none flex-col justify-between">
+<div
+	class="pointer-events-none absolute flex h-full w-full select-none flex-col items-center justify-between"
+>
 	{#if ui.interfaces.status}
-		<div
-			in:fly={{ duration: 300, y: -20 }}
-			out:fly={{ duration: 300, y: -20 }}
-			class="flex w-full flex-col gap-2 px-4 py-2 text-sm"
-		>
-			<div
-				class="jusify-between flex w-full items-center gap-2 rounded-lg bg-base-200/90 px-2 py-[2px]"
-			>
-				<span
-					class="text-abaddon pointer-events-auto flex h-1 w-full items-center gap-2 rounded-lg"
-				>
-					<ActionText />
-				</span>
-				<div class="flex w-[600px] items-center gap-2 rounded-lg px-2">
-					<span class="text-abaddon h-4">10</span>
-					<div
-						class="text-abaddon pointer-events-auto flex h-1 w-[300px] items-center gap-2 rounded-lg bg-base-100 pr-4"
-					>
-						<span class="h-full w-full rounded-lg bg-success"> </span>
-					</div>
-					<span class="text-abaddon h-4">10</span>
-
-					<div
-						class="text-abaddon pointer-events-auto flex h-1 w-[300px] items-center gap-2 rounded-lg bg-base-100 pr-4 text-lg"
-					>
-						<span class="h-full w-full rounded-lg bg-info"> </span>
-					</div>
-					<span class="text-abaddon h-4">99</span>
-					<div
-						class="text-abaddon pointer-events-auto flex h-1 w-[300px] items-center gap-2 rounded-lg bg-base-100 pr-4 text-lg duration-1000"
-					>
-						<span class="h-full w-1/3 rounded-lg bg-warning"> </span>
-					</div>
-					<span class="ml-4 text-nowrap">
-						{new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-					</span>
-				</div>
-			</div>
-		</div>
+		<Status />
 	{/if}
 
 	<Shop />
@@ -250,7 +117,7 @@
 	{#if ui.interfaces.chat}
 		<Chatbox
 			dragAction={(node) => dragAction(node, 'chat')}
-			position={componentPositions.find((c) => c.id === 'chat') ?? { x: 0, y: 0 }}
+			position={ui.componentPositions.find((c) => c.id === 'chat') ?? { x: 0, y: 0 }}
 		/>
 	{/if}
 
@@ -259,10 +126,7 @@
 	{/if}
 
 	{#if ui.interfaces.inventory}
-		<Inventory
-			dragAction={(node) => dragAction(node, 'inventory')}
-			position={componentPositions.find((c) => c.id === 'inventory') ?? { x: 0, y: 0 }}
-		/>
+		<Inventory />
 	{/if}
 
 	{#if ui.interfaces.settings}
@@ -270,13 +134,10 @@
 	{/if}
 
 	{#if ui.interfaces.debug}
-		<Debug
-			dragAction={(node) => dragAction(node, 'debug')}
-			position={componentPositions.find((c) => c.id === 'debug') ?? { x: 0, y: 0 }}
-		/>
+		<Debug />
 	{/if}
 
-	<div class="mt-auto p-2">
+	<div class="mt-auto w-full p-2">
 		<span
 			class="pointer-events-auto flex w-full items-center gap-2 rounded-lg bg-base-200/90 py-2 pl-4 pr-2 text-lg"
 		>
@@ -287,8 +148,8 @@
 					chatboxInput.select();
 				}}
 				type="text"
-				placeholder="Chat..."
-				class="grow select-none bg-transparent pt-1 text-sm text-slate-300 focus:outline-none"
+				placeholder="Enter your message"
+				class="grow select-none bg-transparent pt-1 text-sm tracking-widest text-slate-300 placeholder:tracking-widest focus:outline-none"
 				onfocus={() => {
 					isChatboxFocused = true;
 				}}
