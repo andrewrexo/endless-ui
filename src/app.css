@@ -39,6 +39,10 @@ body {
 }
 
 @layer base {
+	.basic-button {
+		font-family: 'Abaddon';
+	}
+
 	.pulse-glow {
 		animation: pulse-glow 2s ease-in-out infinite;
 		animation-direction: alternate;
