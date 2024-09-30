@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { chatbox as chatState } from '../../../stores/chatStore.svelte';
+	import Panel from '../primitives/panel.svelte';
 
 	let {
 		dragAction,
@@ -20,29 +21,26 @@
 	});
 </script>
 
-<div
-	use:dragAction
-	in:fly={{ duration: 300, y: 20 }}
-	out:fly={{ duration: 300, y: 20 }}
-	style="position: absolute; left: {position.x}px; top: {position.y}px;"
-	class="chat-container bg-base-200/90 w-[360px] rounded-lg p-2 px-0 overflow-hidden pointer-events-auto cursor-grab"
+<Panel
+	componentId="chat"
+	className="chat-container bg-base-200/90 w-[360px] rounded-lg p-2 px-0 overflow-hidden pointer-events-auto cursor-grab"
 >
-	<div bind:this={chatbox} class="chat-messages overflow-y-auto w-full h-[140px] pr-2 space-y-1">
+	<div bind:this={chatbox} class="chat-messages h-[140px] w-full space-y-1 overflow-y-auto pr-2">
 		{#each chatState.messages as message}
-			<div class="rounded-lg px-[0.7rem] w-full">
+			<div class="w-full rounded-lg px-[0.7rem]">
 				<div
 					class={`chat-header leading-none ${message.sender === 'shrube' ? 'text-secondary/80' : 'text-slate-200'}`}
 				>
-					<time class="leading-none opacity-50 text-slate-100">{message.timestamp}</time>
+					<time class="leading-none text-slate-100 opacity-50">{message.timestamp}</time>
 					{message.sender}
 				</div>
-				<div class="flex items-center text-slate-300 w-full">
-					<p class="break-words flex-wrap text-wrap w-full">{message.content}</p>
+				<div class="flex w-full items-center text-slate-300">
+					<p class="w-full flex-wrap text-wrap break-words">{message.content}</p>
 				</div>
 			</div>
 		{/each}
 	</div>
-</div>
+</Panel>
 
 <style lang="postcss">
 	.chat-messages {
