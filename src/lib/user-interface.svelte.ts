@@ -140,7 +140,7 @@ export function createUserInterface() {
 	function hidePanel() {
 		action.action = { action: '', text: '' };
 
-		const prioritized = ['shop', 'context', 'chat', 'inventory', 'debug'];
+		const prioritized = ['shop', 'settings', 'context', 'chat', 'inventory', 'debug'];
 		const allInterfaces = Object.entries(interfaces);
 
 		if (contextMenuState.open) {

@@ -14,6 +14,7 @@
 	import dragAction from '$lib/ui/panels';
 	import Panel from './primitives/panel.svelte';
 	import Status from './status.svelte';
+	import Settings from './settings.svelte';
 
 	let chatboxText = $state('');
 	let isChatboxFocused = $state(false);
@@ -112,13 +113,8 @@
 		<Status />
 	{/if}
 
-	<Shop />
-
 	{#if ui.interfaces.chat}
-		<Chatbox
-			dragAction={(node) => dragAction(node, 'chat')}
-			position={ui.componentPositions.find((c) => c.id === 'chat') ?? { x: 0, y: 0 }}
-		/>
+		<Chatbox />
 	{/if}
 
 	{#if ui.interfaces.players}
@@ -129,13 +125,12 @@
 		<Inventory />
 	{/if}
 
-	{#if ui.interfaces.settings}
-		<div>Settings Interface</div>
-	{/if}
-
 	{#if ui.interfaces.debug}
 		<Debug />
 	{/if}
+
+	<Shop />
+	<Settings />
 
 	<div class="mt-auto w-full p-2">
 		<span
