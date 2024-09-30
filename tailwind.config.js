@@ -12,23 +12,7 @@ export default {
 	},
 	plugins: [daisyui],
 	daisyui: {
-		themes: [
-			'forest',
-			'halloween',
-			'dim',
-			'sunset',
-			'pastel',
-			'fantasy',
-			'lofi',
-			'retro',
-			'emerald',
-			'nord',
-			'night',
-			'sunset',
-			'winter',
-			'dracula',
-			'synthwave'
-		]
+		themes: ['dim']
 	},
 	safelist: [
 		{
