@@ -3,19 +3,19 @@
 
 	import { fly } from 'svelte/transition';
 	import { EventBus } from '../../../game/event-bus';
-	import Chat from '../../icons/chat.svelte';
-	import Users from '../../icons/users.svelte';
-	import Settings from '../../icons/settings.svelte';
 
 	import { ui, type ButtonAction } from '../../../lib/user-interface.svelte';
-	import Bag from '../../icons/bag.svelte';
-	import Book from '../../icons/book.svelte';
+	import FluentChatMail20Filled from '~icons/fluent/chat-mail-20-filled';
+	import GisLocationMan from '~icons/gis/location-man';
+	import PhTreasureChestFill from '~icons/ph/treasure-chest-fill';
+	import FluentWrenchSettings24Filled from '~icons/fluent/wrench-settings-24-filled';
 
 	let mounted = $state(false);
 	let buttons = $state([
-		{ icon: Chat, target: 'chat', action: 'toggle' },
-		{ icon: Book, target: 'inventory', action: 'toggle' },
-		{ icon: Users, target: 'players', action: 'toggle' }
+		{ icon: FluentChatMail20Filled, target: 'chat', action: 'toggle' },
+		{ icon: PhTreasureChestFill, target: 'inventory', action: 'toggle' },
+		{ icon: GisLocationMan, target: 'map', action: 'toggle' },
+		{ icon: FluentWrenchSettings24Filled, target: 'settings', action: 'toggle' }
 	]);
 
 	$effect(() => {
@@ -27,8 +27,8 @@
 	{#if mounted}
 		<button
 			onclick={() => ui.handleButtonAction(button.target, button.action as ButtonAction)}
-			transition:fly={{ x: 100, duration: 300, delay: index * 100 }}
-			class="btn hover:brightness-125 transition-all hover:scale-105 btn-sm px-2"
+			transition:fly={{ x: 100, duration: 300, delay: index * 100 + 400 }}
+			class="btn btn-sm px-2 transition-all hover:scale-105 hover:brightness-125"
 		>
 			{@render button.icon({ size: 32 })}
 		</button>
