@@ -7,6 +7,8 @@ import { ChatBubble } from '../entities/chat-bubble';
 import { NPC } from '../entities/npc';
 import { action } from '../../components/ui/main/action.svelte';
 import { ui } from '../../lib/user-interface.svelte';
+import GameShader from '../render/post-fx';
+import type { NativeUI } from './native-ui';
 
 export class Game extends Scene {
 	map!: MapRenderer; // Add the '!' to fix the initialization error
@@ -19,17 +21,29 @@ export class Game extends Scene {
 	private keyPressThreshold: number = 80; // milliseconds
 	public npcs: NPC[] = [];
 	public players: PlayerSprite[] = [];
+	public minimapObjectLayer!: Phaser.GameObjects.Container;
+	public minimapCamera!: Phaser.Cameras.Scene2D.Camera;
 	private inputEnabled: boolean = true;
 	private isAttackKeyDown: boolean = false;
 	private lastAttackTime: number = 0;
 	private contextMenu: Phaser.GameObjects.DOMElement | null = null;
 	private lastUpdate: number = 0;
+	private frameTime: number = 0;
+	private fixedUpdateRate: number = 1000 / 60; // Fixed update rate for 60 FPS
+	private accumulatedTime: number = 0;
+	private minimapShape!: Phaser.GameObjects.Shape;
+	private minimapMask!: Phaser.Display.Masks.GeometryMask;
 
 	constructor() {
 		super('Game');
 	}
 
 	create() {
+		this.minimapObjectLayer = this.add.container(0, 0);
+		this.minimapObjectLayer.setDepth(1);
+
+		// Set up camera
+		this.minimapCamera = this.cameras.add(625, 10, 200, 200, false, 'minimap');
 		// Create and initialize the map
 		this.map = new MapRenderer(this, 0, 0);
 		this.map.create();
@@ -55,11 +69,21 @@ export class Game extends Scene {
 		this.player.tileX = centerTileX;
 		this.player.tileY = centerTileY;
 
-		// Set up camera
 		this.cameras.main.setZoom(1);
 		this.cameras.main.startFollow(this.player, false, 1, 1);
 		this.cameras.main.setRoundPixels(true);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
+		this.cameras.main.ignore(this.minimapObjectLayer);
+
+		this.minimapCamera.startFollow(this.player, true);
+		this.minimapCamera.setZoom(0.1);
+		this.minimapCamera.fadeIn(500, 0, 0, 0);
+
+		// Create a circular mask for the minimap
+		this.minimapShape = this.add.circle(0, 0, 600, 0x1d1d1d, 0.9);
+		this.minimapMask = this.minimapShape.createGeometryMask();
+		this.minimapObjectLayer.setMask(this.minimapMask);
+		this.cameras.main.ignore(this.minimapShape);
 
 		// Render UI
 		this.scene.launch('NativeUI');
@@ -70,25 +94,28 @@ export class Game extends Scene {
 
 		this.map.on('tileclick', this.handleTileClick, this);
 		this.map.on('interactableclick', this.handleInteractableClick, this);
-		this.map.on('contextmenu', this.handleContextMenu, this);
-
-		this.createNPC('mage', 2, 2, 'Mage');
-		this.createNPC('fighter', 2, 3, 'Fighter');
-		this.createNPC('cleric', 2, 4, '1Cleric');
-
-		EventBus.emit('current-scene-ready', this);
-		EventBus.on('chatbox:send', this.sendMessage.bind(this));
-		EventBus.on(
-			'context-hide',
-			() => {
-				this.contextMenu?.setVisible(false);
-			},
+		this.map.on(
+			'contextmenu',
+			(this.game.scene.getScene('NativeUI') as NativeUI)!.handleContextMenu,
 			this
 		);
 
+		this.createNPC('mage', 2, 2, 'Mage');
+		// this.createNPC('fighter', 2, 3, 'Fighter');
+		// this.createNPC('cleric', 2, 4, '1Cleric');
+
+		EventBus.emit('current-scene-ready', this);
+		EventBus.on('chatbox:send', this.sendMessage.bind(this));
+		EventBus.on('refreshScene', this.reloadScene.bind(this), this);
+
+		this.minimapObjectLayer.bringToTop(this.player.mapIcon);
 		// Add event listeners for window focus and blur
-		window.addEventListener('focus', this.onWindowFocus.bind(this));
-		window.addEventListener('blur', this.onWindowBlur.bind(this));
+		// window.addEventListener('focus', this.onWindowFocus.bind(this));
+		// window.addEventListener('blur', this.onWindowBlur.bind(this));
+	}
+
+	reloadScene() {
+		this.scene.restart();
 	}
 
 	updateActionText = (actionName: string, actionDescription: string) => {
@@ -96,8 +123,8 @@ export class Game extends Scene {
 	};
 
 	onWindowFocus() {
-		// this.cursors = this.input.keyboard!.createCursorKeys();
-		// this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+		this.cursors = this.input.keyboard!.createCursorKeys();
+		this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 	}
 
 	onWindowBlur() {
@@ -120,59 +147,37 @@ export class Game extends Scene {
 	}
 
 	update(time: number, delta: number) {
-		if (this.inputEnabled) {
-			this.handlePlayerInput(time);
-			this.handleShooting();
-		}
+		this.accumulatedTime += delta;
 
-		this.updatePlayerMovement();
+		while (this.accumulatedTime >= this.fixedUpdateRate) {
+			this.accumulatedTime -= this.fixedUpdateRate;
 
-		if (!this.player.isMoving) {
-			this.movePlayerAlongPath();
-		}
-
-		if (
-			this.map.activeTile &&
-			this.map.activeTile.x === this.player.tileX &&
-			this.map.activeTile.y === this.player.tileY
-		) {
-			this.map.emit('navigationend');
-		}
-
-		this.npcs.forEach((npc) => npc.update());
-	}
-
-	handleContextMenu = (object: NPC | PlayerSprite) => {
-		if (this.player === object) {
-			// don't need to show context menu for own player
-			return;
-		}
-
-		ui.handleContextAction('open', {
-			name: object.name
-		});
-
-		if (ui.contextMenu) {
-			if (this.contextMenu) {
-				this.contextMenu
-					.setPosition(this.input.mousePointer.x - 10, this.input.mousePointer.y)
-					.setVisible(true);
-				return;
+			if (this.inputEnabled) {
+				this.player.update();
+				this.handlePlayerInput(time * 1);
 			}
 
-			this.contextMenu = this.add
-				.dom(this.input.mousePointer.x - 10, this.input.mousePointer.y, ui.contextMenu)
-				.setVisible(true)
-				.setScrollFactor(0);
+			this.updatePlayerMovement();
 
-			this.contextMenu.addListener('pointerdown');
-			this.contextMenu.on('pointerdown', () => {
-				this.contextMenu?.setVisible(false);
-			});
+			if (!this.player.isMoving) {
+				this.movePlayerAlongPath();
+			}
 
-			this.add.existing(this.contextMenu);
+			if (
+				this.map.activeTile &&
+				this.map.activeTile.x === this.player.tileX &&
+				this.map.activeTile.y === this.player.tileY
+			) {
+				this.map.emit('navigationend');
+			}
+
+			if (this.minimapShape.x !== this.player.x && this.minimapShape.y !== this.player.y) {
+				this.minimapShape.setPosition(this.player.x, this.player.y);
+			}
+
+			this.npcs.forEach((npc) => npc.update());
 		}
-	};
+	}
 
 	handleInteractableClick = ({ npc, tile }: { npc: NPC; tile: { x: number; y: number } }) => {
 		console.log('Interactable clicked:', tile);
@@ -238,7 +243,7 @@ export class Game extends Scene {
 		}
 	}
 
-	handlePlayerInput(time: number) {
+	handlePlayerInput(fixedTime: number) {
 		if (!this.inputEnabled || this.player.isMoving || this.currentPath.length > 0) return;
 
 		let dx = 0;
@@ -261,10 +266,10 @@ export class Game extends Scene {
 
 		if (keyPressed) {
 			if (this.keyPressStartTime === 0) {
-				this.keyPressStartTime = time;
+				this.keyPressStartTime = fixedTime;
 			}
 
-			const keyPressDuration = time - this.keyPressStartTime;
+			const keyPressDuration = fixedTime - this.keyPressStartTime;
 			const direction = dx === -1 ? 'left' : dx === 1 ? 'right' : dy === -1 ? 'up' : 'down';
 
 			if (keyPressDuration >= this.keyPressThreshold) {
@@ -274,7 +279,7 @@ export class Game extends Scene {
 				if (this.map.isValidTile(targetTileX, targetTileY)) {
 					this.player.startMovement(dx, dy);
 				}
-			} else if (keyPressDuration > 10 && this.player.direction != direction) {
+			} else if (keyPressDuration && this.player.direction != direction) {
 				this.player.faceDirection(direction, { update: true });
 			}
 		} else {
@@ -289,24 +294,21 @@ export class Game extends Scene {
 				this.player.isIdling = true;
 				this.player.playIdleAnimation();
 			}
-
 			return;
 		}
 
 		this.player.updateMovement(this.map.tileWidth);
 
-		if (this.player.isMoving) {
-			const startPos = this.map.getTilePosition(this.player.tileX, this.player.tileY);
-			const endPos = this.map.getTilePosition(this.player.targetTileX, this.player.targetTileY);
-			const progress = this.player.movementProgress / this.map.tileWidth;
+		const startPos = this.map.getTilePosition(this.player.tileX, this.player.tileY);
+		const endPos = this.map.getTilePosition(this.player.targetTileX, this.player.targetTileY);
+		const progress = this.player.movementProgress / this.map.tileWidth;
 
-			this.player.x = Math.round(startPos.x + (endPos.x - startPos.x) * progress);
-			this.player.y = Math.round(
-				startPos.y + (endPos.y - startPos.y) * progress - this.player.offsetY
-			);
-		} else {
-			const pos = this.map.getTilePosition(this.player.tileX, this.player.tileY);
-			this.player.setPosition(Math.round(pos.x), Math.round(pos.y - this.player.offsetY));
+		this.player.x = Math.round(startPos.x + (endPos.x - startPos.x) * progress);
+		this.player.y = Math.round(
+			startPos.y + (endPos.y - startPos.y) * progress - this.player.offsetY
+		);
+
+		if (!this.player.isMoving) {
 			// Check for pending destination after movement is complete
 			if (this.pendingDestination) {
 				console.log('Processing pending destination after movement');
@@ -318,7 +320,6 @@ export class Game extends Scene {
 	}
 
 	sendMessage(message: string) {
-		console.log(message);
 		this.player.showChatBubble(message);
 	}
 
