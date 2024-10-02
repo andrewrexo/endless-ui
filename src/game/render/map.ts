@@ -11,6 +11,7 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 	scene: GameScene;
 	map!: Phaser.Tilemaps.Tilemap;
 	tileset!: Phaser.Tilemaps.Tileset;
+	objectTileset!: Phaser.Tilemaps.Tileset;
 	layer!: Phaser.Tilemaps.TilemapLayer;
 	walkableTiles: boolean[][];
 	activeTile: Phaser.Tilemaps.Tile | null = null;
@@ -60,6 +61,7 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		this.load();
 		// Create the tilemap layer
 		const layer = this.map.createLayer(0, this.tileset, 0, 0);
+		console.log(this.map.layers);
 
 		if (!layer) {
 			console.error('Failed to create tilemap layer');
@@ -68,6 +70,9 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 
 		this.layer = layer;
 		this.layer.setPosition(-32, -16);
+
+		// Add the following code to create object sprites
+		this.createObjectSprites();
 
 		// Set up interactivity for the entire scene
 		this.scene.input.on('pointerdown', this.onSceneClick, this);
@@ -80,13 +85,13 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 	load(): void {
 		// Load the tilemap from the JSON file
 		this.map = this.scene.make.tilemap({ key: 'map-1' });
-
 		// Load the tileset image
 		const tileset = this.map.addTilesetImage('tiles', 'tiles');
 		if (!tileset) {
 			console.error('Failed to load tileset');
 			return;
 		}
+
 		this.tileset = tileset;
 
 		// Update map dimensions
@@ -108,6 +113,9 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 			return;
 		}
 
+		if (this.scene.cameras.getCamerasBelowPointer(pointer).length > 1) {
+			return;
+		}
 		console.log('Clicked world position:', worldPoint.x, worldPoint.y);
 		console.log('Calculated tile:', tile);
 
@@ -131,7 +139,11 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 	}
 
 	initMinimap() {
+		const cloned = Phaser.Utils.Objects.Clone(this.layer);
+
 		this.scene.minimapCamera.ignore(this.layer);
+		this.scene.minimapObjectLayer.add(cloned);
+
 		this.drawIsometricGrid();
 	}
 
@@ -245,8 +257,42 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 	}
 
 	drawIsometricGrid() {
+		// Create a separate graphics object for the filled grid
+		const filledGrid = this.scene.add.graphics();
+		//filledGrid.fillStyle(0x20252e, 0.9); // Light purple with 50% opacity
+
+		// Create an array to store the points for each diamond shape
+		const diamondPoints = [];
+
+		// Generate points for each diamond in the grid
+		for (let y = 0; y <= this.mapHeight; y++) {
+			for (let x = 0; x <= this.mapWidth; x++) {
+				const topLeft = this.getTilePosition(x, y);
+				const topRight = this.getTilePosition(x + 1, y);
+				const bottomRight = this.getTilePosition(x + 1, y + 1);
+				const bottomLeft = this.getTilePosition(x, y + 1);
+
+				diamondPoints.push([
+					{ x: topLeft.x, y: topLeft.y - 16 },
+					{ x: topRight.x, y: topRight.y - 16 },
+					{ x: bottomRight.x, y: bottomRight.y - 16 },
+					{ x: bottomLeft.x, y: bottomLeft.y - 16 }
+				]);
+			}
+		}
+
+		// Fill each diamond shape
+		diamondPoints.forEach((points) => {
+			filledGrid.fillPoints(points, true, true);
+		});
+
+		// Add the filled grid to the minimapObjectLayer
+		this.scene.minimapObjectLayer.add(filledGrid);
+		filledGrid.setDepth(-100);
+
+		// Draw the grid lines
 		this.graphics = this.scene.add.graphics();
-		this.graphics.lineStyle(6, 0x9370db, 1);
+		this.graphics.lineStyle(8, 0x888888, 1);
 
 		// Draw vertical lines
 		for (let x = 0; x <= this.mapWidth; x++) {
@@ -266,8 +312,32 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 
 		this.graphics.strokePath();
 		this.scene.minimapObjectLayer.add(this.graphics);
-		this.graphics.setDepth(-100);
+		this.graphics.setDepth(-99); // Set depth slightly above the filled grid
+	}
 
-		// Add the grid to the same layer as the mapBoundsPolygon
+	createObjectSprites() {
+		const objectLayer = this.map.layers[1];
+		if (!objectLayer || !objectLayer.data) {
+			console.error('Object layer not found or invalid');
+			return;
+		}
+
+		for (let y = 0; y < objectLayer.height; y++) {
+			for (let x = 0; x < objectLayer.width; x++) {
+				const tile = objectLayer.data[y][x];
+				if (tile && tile.index !== -1) {
+					const spriteKey = (tile.index - 470).toString();
+					if (spriteKey) {
+						console.log(tile);
+						const worldPos = this.getTilePosition(x, y);
+						const sprite = this.scene.add.sprite(worldPos.x, worldPos.y, spriteKey);
+						this.scene.minimapCamera.ignore(sprite);
+
+						sprite.setOrigin(0.5, 1);
+						sprite.setDepth(sprite.y);
+					}
+				}
+			}
+		}
 	}
 }

@@ -70,7 +70,9 @@ export class PlayerSprite extends GameObjects.Container {
 		this.mapIcon = scene.add.sprite(0, 0, 'player-icon');
 		this.mapIcon.setOrigin(0.5);
 		this.mapIcon.setPosition(0, -this.playerSprite.height / 2 - 16 / 2); // Position above the player
-		this.mapIcon.setScale(6);
+		this.mapIcon.setScale(7);
+		this.mapIcon.setTint(0xffff80);
+
 		this.playerSprite.on('pointerover', () => {
 			if (this.isHover) return;
 
@@ -139,7 +141,7 @@ export class PlayerSprite extends GameObjects.Container {
 			return;
 		}
 
-		this.setDepth(this.tileY + 1);
+		this.setDepth(this.y + 20);
 		this.mapIcon.setPosition(this.x, this.y);
 	}
 

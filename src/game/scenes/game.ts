@@ -37,6 +37,9 @@ export class Game extends Scene {
 	}
 
 	create() {
+		this.minimapCamera = this.cameras.add(660, 40, 125, 125, false, 'minimap');
+		this.minimapObjectLayer = this.add.container(0, 0);
+		this.minimapObjectLayer.setDepth(1);
 		// Create and initialize the map
 		this.map = new MapRenderer(this, 0, 0);
 		this.map.create();
@@ -104,17 +107,14 @@ export class Game extends Scene {
 	alignMinimapToPlayer() {}
 
 	addMinimap() {
-		this.minimapObjectLayer = this.add.container(0, 0);
-		this.minimapObjectLayer.setDepth(1);
 		this.cameras.main.ignore(this.minimapObjectLayer);
 
-		this.minimapCamera = this.cameras.add(640, 50, 150, 150, false, 'minimap');
-		this.minimapCamera.startFollow(this.player, true);
-		this.minimapCamera.setZoom(0.2);
+		this.minimapCamera.startFollow(this.player);
+		this.minimapCamera.setZoom(0.15);
 		this.minimapCamera.fadeIn(500, 0, 0, 0);
 
 		// Create a circular mask for the minimap
-		this.minimapShape = this.add.circle(0, 0, 350, 0x242933, 0.9);
+		this.minimapShape = this.add.circle(0, 0, 500, 0x20252e, 0);
 		this.minimapMask = this.minimapShape.createGeometryMask();
 		this.minimapObjectLayer.setMask(this.minimapMask);
 		this.cameras.main.ignore(this.minimapShape);
@@ -128,6 +128,7 @@ export class Game extends Scene {
 
 		this.minimapObjectLayer.add(this.player.mapIcon);
 		this.minimapObjectLayer.bringToTop(this.player.mapIcon);
+		this.minimapCamera.ignore(this.player);
 
 		this.cameras.main.ignore(this.minimapObjectLayer);
 		this.cameras.remove(this.minimapCamera, false);

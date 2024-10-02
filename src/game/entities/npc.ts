@@ -77,7 +77,7 @@ export class NPC extends GameObjects.Container {
 		this.mapIcon = scene.add.sprite(0, 0, 'quest-icon');
 		this.mapIcon.setScale(8);
 		this.mapIcon.setOrigin(0.5);
-		this.mapIcon.tint = 0xff0000;
+		this.mapIcon.tint = 0x00ff00;
 		this.mapIcon.postFX.addShine();
 		this.mapIcon.setPosition(0, -this.sprite.height / 2 - 16 / 2); // Position above the NPC
 
