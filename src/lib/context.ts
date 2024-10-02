@@ -8,21 +8,21 @@ export const menuOptions: MenuOption[] = [
 		icon: UserInteract,
 		option: 'View equipment',
 		callback: () => {
-			alert('yo!');
+			//alert('yo!');
 		}
 	},
 	{
 		icon: Users,
 		option: 'Add as friend',
 		callback: () => {
-			alert('yo2!');
+			//alert('yo2!');
 		}
 	},
 	{
 		icon: Chat,
 		option: 'Send message',
 		callback: () => {
-			alert('yo3!');
+			//alert('yo3!');
 		}
 	}
 ];
