@@ -1,4 +1,4 @@
-import { Scene, GameObjects, Math as PhaserMath } from 'phaser';
+import { GameObjects } from 'phaser';
 import { ChatBubble } from './chat-bubble';
 import { Game as GameScene } from '../scenes/game';
 
@@ -65,18 +65,12 @@ export class PlayerSprite extends GameObjects.Container {
 		this.usernameText.setOrigin(0.5);
 
 		this.playerSprite.setInteractive();
-
 		this.add(this.usernameText);
 
 		this.mapIcon = scene.add.sprite(0, 0, 'player-icon');
 		this.mapIcon.setOrigin(0.5);
-		this.mapIcon.setScale(10);
-		this.mapIcon.setToTop().setDepth(1000);
-		this.mapIcon.setPosition(0, -this.playerSprite.height / 2 - 16 / 2); // Position above the NPC
-
-		this.scene.minimapObjectLayer.add(this.mapIcon);
-		this.scene.minimapCamera.ignore(this);
-
+		this.mapIcon.setPosition(0, -this.playerSprite.height / 2 - 16 / 2); // Position above the player
+		this.mapIcon.setScale(6);
 		this.playerSprite.on('pointerover', () => {
 			if (this.isHover) return;
 

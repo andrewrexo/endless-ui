@@ -1,19 +1,17 @@
-import { Scene, GameObjects } from 'phaser';
+import { GameObjects } from 'phaser';
 import { MapRenderer } from '../render/map';
-import { EventBus } from '../event-bus';
 import { Game as GameScene } from '../scenes/game';
 
 export class NPC extends GameObjects.Container {
 	private sprite: GameObjects.Sprite;
-	private borderSprite: GameObjects.Sprite;
 	private nameText: GameObjects.Text;
 	private action: string;
-	private mapIcon: GameObjects.Sprite;
 	private text: string;
 	private isHover: boolean = false;
 	public tileX: number;
 	public tileY: number;
 	public name: string;
+	public mapIcon: GameObjects.Sprite;
 	public declare scene: GameScene;
 
 	constructor(
@@ -36,6 +34,7 @@ export class NPC extends GameObjects.Container {
 		// Create main sprite
 		this.sprite = scene.add.sprite(0, 0, key).setInteractive();
 		this.add(this.sprite);
+		this.setDepth(2);
 
 		this.sprite.on('pointerover', () => {
 			if (this.isHover) return;
@@ -54,12 +53,6 @@ export class NPC extends GameObjects.Container {
 			this.nameText.setVisible(false);
 			scene.updateActionText('', '');
 		});
-
-		// Create border sprite
-		const minimap = this.scene.game.scene.getScene('NativeUI')?.cameras.getCamera('minimap');
-
-		minimap?.ignore(this.sprite);
-
 		// Create name text
 		this.nameText = scene.add
 			.text(0, -24, name, {
@@ -82,12 +75,11 @@ export class NPC extends GameObjects.Container {
 
 		// Create red block sprite
 		this.mapIcon = scene.add.sprite(0, 0, 'quest-icon');
-		this.mapIcon.setScale(10);
+		this.mapIcon.setScale(8);
 		this.mapIcon.setOrigin(0.5);
+		this.mapIcon.tint = 0xff0000;
 		this.mapIcon.postFX.addShine();
 		this.mapIcon.setPosition(0, -this.sprite.height / 2 - 16 / 2); // Position above the NPC
-		this.scene.minimapObjectLayer.add(this.mapIcon);
-		this.scene.minimapCamera.ignore(this);
 
 		// Add to scene
 		scene.add.existing(this);
@@ -95,7 +87,6 @@ export class NPC extends GameObjects.Container {
 
 	public setAnimation(key: string) {
 		this.sprite.play(key);
-		this.borderSprite.play(key);
 	}
 
 	public faceDirection(direction: 'up' | 'down' | 'left' | 'right') {

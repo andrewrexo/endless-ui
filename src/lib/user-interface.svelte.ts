@@ -97,6 +97,11 @@ export function createUserInterface() {
 	}
 
 	function handleButtonAction(target: ButtonTarget, action: ButtonAction, props?: InterfaceProps) {
+		if (target === 'minimap') {
+			EventBus.emit('minimap:toggle');
+			return;
+		}
+
 		switch (action) {
 			case 'toggle':
 				toggleInterface(target);

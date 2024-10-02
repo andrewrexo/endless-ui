@@ -14,7 +14,7 @@
 	let buttons = $state([
 		{ icon: FluentChatMail20Filled, target: 'chat', action: 'toggle' },
 		{ icon: PhTreasureChestFill, target: 'inventory', action: 'toggle' },
-		{ icon: GisLocationMan, target: 'map', action: 'toggle' },
+		{ icon: GisLocationMan, target: 'minimap', action: 'toggle' },
 		{ icon: FluentWrenchSettings24Filled, target: 'settings', action: 'toggle' }
 	]);
 

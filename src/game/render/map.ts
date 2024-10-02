@@ -1,10 +1,7 @@
 import Phaser from 'phaser';
-import { EventBus } from '../event-bus';
 import { Game as GameScene } from '../scenes/game';
 import type { NPC } from '../entities/npc';
-import { ui } from '../../lib/user-interface.svelte';
 import type { PlayerSprite } from '../entities/player-sprite';
-import GameShader from './post-fx';
 
 export class MapRenderer extends Phaser.GameObjects.Container {
 	tileWidth: number = 64;
@@ -19,6 +16,7 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 	activeTile: Phaser.Tilemaps.Tile | null = null;
 	interactables: any[][];
 	mapBoundsPolygon: Phaser.GameObjects.Polygon | null = null;
+	graphics: Phaser.GameObjects.Graphics | null = null;
 
 	constructor(scene: GameScene, x: number, y: number) {
 		super(scene, x, y);
@@ -70,10 +68,6 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 
 		this.layer = layer;
 		this.layer.setPosition(-32, -16);
-		this.scene.minimapCamera.ignore(layer);
-
-		// Add this line to draw the map bounds polygon
-		this.drawMapBoundsPolygon();
 
 		// Set up interactivity for the entire scene
 		this.scene.input.on('pointerdown', this.onSceneClick, this);
@@ -134,6 +128,11 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		} else {
 			console.log('Invalid tile clicked');
 		}
+	}
+
+	initMinimap() {
+		this.scene.minimapCamera.ignore(this.layer);
+		this.drawIsometricGrid();
 	}
 
 	worldToTileXY(worldX: number, worldY: number): { x: number; y: number } {
@@ -245,35 +244,29 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		return []; // No path found
 	}
 
-	// Add this new method
-	drawMapBoundsPolygon() {
-		// Add this line to draw the isometric grid
-		this.drawIsometricGrid();
-	}
-
-	// Add this new method
 	drawIsometricGrid() {
-		const graphics = this.scene.add.graphics();
-		graphics.lineStyle(9, 0x9370db, 0.7);
+		this.graphics = this.scene.add.graphics();
+		this.graphics.lineStyle(6, 0x9370db, 1);
 
 		// Draw vertical lines
 		for (let x = 0; x <= this.mapWidth; x++) {
 			const start = this.getTilePosition(x, 0);
 			const end = this.getTilePosition(x, this.mapHeight);
-			graphics.moveTo(start.x, start.y - 16);
-			graphics.lineTo(end.x, end.y - 16);
+			this.graphics.moveTo(start.x, start.y - 16);
+			this.graphics.lineTo(end.x, end.y - 16);
 		}
 
 		// Draw horizontal lines
 		for (let y = 0; y <= this.mapHeight; y++) {
 			const start = this.getTilePosition(0, y);
 			const end = this.getTilePosition(this.mapWidth, y);
-			graphics.moveTo(start.x, start.y - 16);
-			graphics.lineTo(end.x, end.y - 16);
+			this.graphics.moveTo(start.x, start.y - 16);
+			this.graphics.lineTo(end.x, end.y - 16);
 		}
 
-		graphics.strokePath();
-		this.scene.minimapObjectLayer.add(graphics);
+		this.graphics.strokePath();
+		this.scene.minimapObjectLayer.add(this.graphics);
+		this.graphics.setDepth(-100);
 
 		// Add the grid to the same layer as the mapBoundsPolygon
 	}

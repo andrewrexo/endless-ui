@@ -3,11 +3,8 @@ import { Scene } from 'phaser';
 import { MapRenderer } from '../render/map';
 import { centerX as scaleCenterX, centerY as scaleCenterY } from '../scale';
 import { PlayerSprite } from '../entities/player-sprite';
-import { ChatBubble } from '../entities/chat-bubble';
 import { NPC } from '../entities/npc';
 import { action } from '../../components/ui/main/action.svelte';
-import { ui } from '../../lib/user-interface.svelte';
-import GameShader from '../render/post-fx';
 import type { NativeUI } from './native-ui';
 
 export class Game extends Scene {
@@ -19,6 +16,7 @@ export class Game extends Scene {
 	private pendingDestination: { x: number; y: number } | null = null;
 	private keyPressStartTime: number = 0;
 	private keyPressThreshold: number = 80; // milliseconds
+	private mapToggled: boolean = true;
 	public npcs: NPC[] = [];
 	public players: PlayerSprite[] = [];
 	public minimapObjectLayer!: Phaser.GameObjects.Container;
@@ -39,11 +37,6 @@ export class Game extends Scene {
 	}
 
 	create() {
-		this.minimapObjectLayer = this.add.container(0, 0);
-		this.minimapObjectLayer.setDepth(1);
-
-		// Set up camera
-		this.minimapCamera = this.cameras.add(625, 10, 200, 200, false, 'minimap');
 		// Create and initialize the map
 		this.map = new MapRenderer(this, 0, 0);
 		this.map.create();
@@ -73,17 +66,6 @@ export class Game extends Scene {
 		this.cameras.main.startFollow(this.player, false, 1, 1);
 		this.cameras.main.setRoundPixels(true);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
-		this.cameras.main.ignore(this.minimapObjectLayer);
-
-		this.minimapCamera.startFollow(this.player, true);
-		this.minimapCamera.setZoom(0.1);
-		this.minimapCamera.fadeIn(500, 0, 0, 0);
-
-		// Create a circular mask for the minimap
-		this.minimapShape = this.add.circle(0, 0, 600, 0x1d1d1d, 0.9);
-		this.minimapMask = this.minimapShape.createGeometryMask();
-		this.minimapObjectLayer.setMask(this.minimapMask);
-		this.cameras.main.ignore(this.minimapShape);
 
 		// Render UI
 		this.scene.launch('NativeUI');
@@ -100,18 +82,56 @@ export class Game extends Scene {
 			this
 		);
 
-		this.createNPC('mage', 2, 2, 'Mage');
-		// this.createNPC('fighter', 2, 3, 'Fighter');
-		// this.createNPC('cleric', 2, 4, '1Cleric');
-
 		EventBus.emit('current-scene-ready', this);
 		EventBus.on('chatbox:send', this.sendMessage.bind(this));
 		EventBus.on('refreshScene', this.reloadScene.bind(this), this);
+		EventBus.on('minimap:toggle', this.toggleMinimap.bind(this), this);
 
+		this.createNPC('mage', 2, 2, 'Mage');
+		this.addMinimap();
+	}
+
+	toggleMinimap() {
+		if (this.mapToggled) {
+			this.minimapCamera.fadeOut(500, 0, 0, 0);
+			setTimeout(() => {
+				this.mapToggled = false;
+			}, 500);
+		} else {
+			this.minimapCamera.fadeIn(500, 0, 0, 0);
+			this.mapToggled = true;
+		}
+	}
+
+	addMinimap() {
+		this.minimapObjectLayer = this.add.container(0, 0);
+		this.minimapObjectLayer.setDepth(1);
+
+		// Set up camera
+		this.minimapCamera = this.cameras.add(640, 50, 150, 150, false, 'minimap');
+		this.cameras.main.ignore(this.minimapObjectLayer);
+
+		this.minimapCamera.startFollow(this.player, true);
+		this.minimapCamera.setZoom(0.2);
+		this.minimapCamera.fadeIn(500, 0, 0, 0);
+
+		// Create a circular mask for the minimap
+		this.minimapShape = this.add.circle(0, 0, 350, 0x1d1d1d, 0.9);
+		this.minimapMask = this.minimapShape.createGeometryMask();
+		this.minimapObjectLayer.setMask(this.minimapMask);
+		this.cameras.main.ignore(this.minimapShape);
+
+		this.map.initMinimap();
+
+		this.npcs.forEach((npc) => {
+			this.minimapObjectLayer.add(npc.mapIcon);
+			this.minimapCamera.ignore(npc);
+		});
+
+		this.minimapObjectLayer.add(this.player.mapIcon);
 		this.minimapObjectLayer.bringToTop(this.player.mapIcon);
-		// Add event listeners for window focus and blur
-		// window.addEventListener('focus', this.onWindowFocus.bind(this));
-		// window.addEventListener('blur', this.onWindowBlur.bind(this));
+
+		this.cameras.main.ignore(this.minimapObjectLayer);
 	}
 
 	reloadScene() {
