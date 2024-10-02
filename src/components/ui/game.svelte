@@ -90,6 +90,7 @@
 			ui.handleButtonAction('inventory', 'open');
 			ui.handleButtonAction('status', 'open');
 			ui.handleButtonAction('debug', 'open');
+			ui.handleButtonAction('minimap', 'open');
 		}, 500);
 
 		return () => {

@@ -139,6 +139,7 @@ export class PlayerSprite extends GameObjects.Container {
 			return;
 		}
 
+		this.setDepth(this.tileY + 1);
 		this.mapIcon.setPosition(this.x, this.y);
 	}
 

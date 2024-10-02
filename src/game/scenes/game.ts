@@ -16,7 +16,7 @@ export class Game extends Scene {
 	private pendingDestination: { x: number; y: number } | null = null;
 	private keyPressStartTime: number = 0;
 	private keyPressThreshold: number = 80; // milliseconds
-	private mapToggled: boolean = true;
+	private mapToggled: boolean = false;
 	public npcs: NPC[] = [];
 	public players: PlayerSprite[] = [];
 	public minimapObjectLayer!: Phaser.GameObjects.Container;
@@ -93,30 +93,28 @@ export class Game extends Scene {
 
 	toggleMinimap() {
 		if (this.mapToggled) {
-			this.minimapCamera.fadeOut(500, 0, 0, 0);
-			setTimeout(() => {
-				this.mapToggled = false;
-			}, 500);
+			this.cameras.remove(this.minimapCamera, false);
+			this.mapToggled = false;
 		} else {
-			this.minimapCamera.fadeIn(500, 0, 0, 0);
+			this.cameras.addExisting(this.minimapCamera, false);
 			this.mapToggled = true;
 		}
 	}
 
+	alignMinimapToPlayer() {}
+
 	addMinimap() {
 		this.minimapObjectLayer = this.add.container(0, 0);
 		this.minimapObjectLayer.setDepth(1);
-
-		// Set up camera
-		this.minimapCamera = this.cameras.add(640, 50, 150, 150, false, 'minimap');
 		this.cameras.main.ignore(this.minimapObjectLayer);
 
+		this.minimapCamera = this.cameras.add(640, 50, 150, 150, false, 'minimap');
 		this.minimapCamera.startFollow(this.player, true);
 		this.minimapCamera.setZoom(0.2);
 		this.minimapCamera.fadeIn(500, 0, 0, 0);
 
 		// Create a circular mask for the minimap
-		this.minimapShape = this.add.circle(0, 0, 350, 0x1d1d1d, 0.9);
+		this.minimapShape = this.add.circle(0, 0, 350, 0x242933, 0.9);
 		this.minimapMask = this.minimapShape.createGeometryMask();
 		this.minimapObjectLayer.setMask(this.minimapMask);
 		this.cameras.main.ignore(this.minimapShape);
@@ -132,6 +130,22 @@ export class Game extends Scene {
 		this.minimapObjectLayer.bringToTop(this.player.mapIcon);
 
 		this.cameras.main.ignore(this.minimapObjectLayer);
+		this.cameras.remove(this.minimapCamera, false);
+
+		this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+			if (!p.isDown) return;
+
+			// Check if the cursor is within the minimap bounds
+			if (
+				p.x >= this.minimapCamera.x &&
+				p.x <= this.minimapCamera.x + this.minimapCamera.width &&
+				p.y >= this.minimapCamera.y &&
+				p.y <= this.minimapCamera.y + this.minimapCamera.height
+			) {
+				this.minimapCamera.x += p.x - p.prevPosition.x;
+				this.minimapCamera.y += p.y - p.prevPosition.y;
+			}
+		});
 	}
 
 	reloadScene() {
