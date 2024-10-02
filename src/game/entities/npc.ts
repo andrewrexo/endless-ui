@@ -8,11 +8,13 @@ export class NPC extends GameObjects.Container {
 	private borderSprite: GameObjects.Sprite;
 	private nameText: GameObjects.Text;
 	private action: string;
+	private mapIcon: GameObjects.Sprite;
 	private text: string;
 	private isHover: boolean = false;
 	public tileX: number;
 	public tileY: number;
 	public name: string;
+	public declare scene: GameScene;
 
 	constructor(
 		scene: GameScene,
@@ -37,26 +39,26 @@ export class NPC extends GameObjects.Container {
 
 		this.sprite.on('pointerover', () => {
 			if (this.isHover) return;
+			this.sprite.postFX.addGlow(0xffffff, 4, 0.5, false, 2, 4);
 
 			this.isHover = true;
-			this.borderSprite.setVisible(true);
 			this.nameText.setVisible(true);
 			scene.updateActionText(this.action, this.text);
 		});
 
 		this.sprite.on('pointerout', () => {
 			if (!this.isHover) return;
+			this.sprite.postFX.clear();
 
 			this.isHover = false;
-			this.borderSprite.setVisible(false);
 			this.nameText.setVisible(false);
 			scene.updateActionText('', '');
 		});
 
 		// Create border sprite
-		this.borderSprite = scene.add.sprite(0, 0, key);
-		this.borderSprite.setTintFill(0xffffff).setScale(1.1).setVisible(false);
-		this.add(this.borderSprite).sendToBack(this.borderSprite);
+		const minimap = this.scene.game.scene.getScene('NativeUI')?.cameras.getCamera('minimap');
+
+		minimap?.ignore(this.sprite);
 
 		// Create name text
 		this.nameText = scene.add
@@ -78,6 +80,15 @@ export class NPC extends GameObjects.Container {
 		const { x, y } = map.getTilePosition(tileX, tileY);
 		this.setPosition(x, y - this.sprite.height / 3);
 
+		// Create red block sprite
+		this.mapIcon = scene.add.sprite(0, 0, 'quest-icon');
+		this.mapIcon.setScale(10);
+		this.mapIcon.setOrigin(0.5);
+		this.mapIcon.postFX.addShine();
+		this.mapIcon.setPosition(0, -this.sprite.height / 2 - 16 / 2); // Position above the NPC
+		this.scene.minimapObjectLayer.add(this.mapIcon);
+		this.scene.minimapCamera.ignore(this);
+
 		// Add to scene
 		scene.add.existing(this);
 	}
@@ -93,6 +104,11 @@ export class NPC extends GameObjects.Container {
 	}
 
 	public update() {
+		if (this.mapIcon.x === this.x && this.mapIcon.y === this.y) {
+			return;
+		}
+
+		this.mapIcon.setPosition(this.x, this.y);
 		// Implement any per-frame update logic here
 	}
 }

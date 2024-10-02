@@ -20,6 +20,8 @@ export class PlayerSprite extends GameObjects.Container {
 	action: string = 'Player';
 	actionDescription: string = '';
 	isHover: boolean = false;
+	mapIcon: GameObjects.Sprite;
+	public declare scene: GameScene;
 
 	private usernameText: GameObjects.Text;
 	private playerSprite: GameObjects.Sprite;
@@ -41,6 +43,7 @@ export class PlayerSprite extends GameObjects.Container {
 		this.actionDescription = username;
 
 		this.playerSprite = scene.add.sprite(x, y, this.textureKey, 1);
+		this.playerSprite.setOrigin(0.5);
 		this.add(this.playerSprite);
 		this.createAnimations();
 		this.playIdleAnimation();
@@ -65,9 +68,19 @@ export class PlayerSprite extends GameObjects.Container {
 
 		this.add(this.usernameText);
 
+		this.mapIcon = scene.add.sprite(0, 0, 'player-icon');
+		this.mapIcon.setOrigin(0.5);
+		this.mapIcon.setScale(10);
+		this.mapIcon.setToTop().setDepth(1000);
+		this.mapIcon.setPosition(0, -this.playerSprite.height / 2 - 16 / 2); // Position above the NPC
+
+		this.scene.minimapObjectLayer.add(this.mapIcon);
+		this.scene.minimapCamera.ignore(this);
+
 		this.playerSprite.on('pointerover', () => {
 			if (this.isHover) return;
 
+			this.playerSprite.postFX.addGlow(0xffffff, 4, 0.5, false, 2, 4);
 			this.isHover = true;
 			this.usernameText.setVisible(true);
 			scene.updateActionText(this.action, this.actionDescription);
@@ -76,6 +89,7 @@ export class PlayerSprite extends GameObjects.Container {
 		this.playerSprite.on('pointerout', () => {
 			if (!this.isHover) return;
 
+			this.playerSprite.postFX.clear();
 			this.isHover = false;
 			this.usernameText.setVisible(false);
 			scene.updateActionText('', '');
@@ -94,7 +108,6 @@ export class PlayerSprite extends GameObjects.Container {
 
 		this.particles.setDepth(4);
 		this.offsetY = Math.round(this.playerSprite.height / 2); // Set offset to 1/4 of tile height
-
 		scene.add.existing(this);
 	}
 
@@ -125,6 +138,14 @@ export class PlayerSprite extends GameObjects.Container {
 		}
 
 		this.playAnimation(animKey);
+	}
+
+	update() {
+		if (this.mapIcon.x === this.x && this.mapIcon.y === this.y) {
+			return;
+		}
+
+		this.mapIcon.setPosition(this.x, this.y);
 	}
 
 	updateMovement(tileWidth: number) {
