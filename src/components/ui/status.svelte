@@ -1,9 +1,8 @@
 <script>
 	import ActionText from './main/action-text.svelte';
 	import Panel from './primitives/panel.svelte';
-	import { ui } from '$lib/user-interface.svelte';
 
-	let time = $state(0);
+	let time = $state(new Date().getTime());
 
 	const tick = () => {
 		time = time = new Date().getTime();
@@ -17,13 +16,7 @@
 		};
 	});
 
-	$effect(() => {
-		console.log(ui.interfaces.minimap);
-	});
-
-	let width = $derived(ui.interfaces.minimap ? 165 : 165);
-
-	$inspect(width);
+	let width = 140;
 </script>
 
 <Panel
@@ -59,8 +52,18 @@
 				style="width: {width}px"
 				class="text-abaddon pointer-events-auto flex h-1 w-[{width}px] items-center gap-2 rounded-lg bg-base-100 pr-4 text-lg duration-1000"
 			>
-				<span class="h-full w-1/3 rounded-lg bg-warning"> </span>
+				<span class="h-full w-1/3 rounded-lg bg-warning"></span>
 			</div>
+			<span class="mt-1 min-w-[65px] text-right">
+				{new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+			</span>
 		</div>
 	</div>
 </Panel>
+
+<style>
+	.text-right {
+		font-family: 'Abaddon';
+		font-size: 14px;
+	}
+</style>
