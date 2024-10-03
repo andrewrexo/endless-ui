@@ -292,7 +292,7 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 
 		// Draw the grid lines
 		this.graphics = this.scene.add.graphics();
-		this.graphics.lineStyle(8, 0x888888, 1);
+		this.graphics.lineStyle(6, 0xffffff, 0.3); // Slight green color with 30% opacity
 
 		// Draw vertical lines
 		for (let x = 0; x <= this.mapWidth; x++) {
@@ -328,13 +328,19 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 				if (tile && tile.index !== -1) {
 					const spriteKey = (tile.index - 470).toString();
 					if (spriteKey) {
-						console.log(tile);
 						const worldPos = this.getTilePosition(x, y);
 						const sprite = this.scene.add.sprite(worldPos.x, worldPos.y, spriteKey);
-						this.scene.minimapCamera.ignore(sprite);
+						//this.scene.minimapCamera.ignore(sprite);
 
-						sprite.setOrigin(0.5, 1);
-						sprite.setDepth(sprite.y);
+						// Center the sprite on the tile
+						sprite.setOrigin(1, 1);
+
+						// Adjust the sprite's position to the center of the tile
+						sprite.x += sprite.width / 2;
+						sprite.y += 8;
+
+						// Set the sprite's depth based on its bottom edge
+						sprite.setDepth(worldPos.y);
 					}
 				}
 			}

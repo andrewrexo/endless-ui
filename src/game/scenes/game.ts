@@ -6,6 +6,7 @@ import { PlayerSprite } from '../entities/player-sprite';
 import { NPC } from '../entities/npc';
 import { action } from '../../components/ui/main/action.svelte';
 import type { NativeUI } from './native-ui';
+import { ui } from '$lib/user-interface.svelte';
 
 export class Game extends Scene {
 	map!: MapRenderer; // Add the '!' to fix the initialization error
@@ -37,7 +38,7 @@ export class Game extends Scene {
 	}
 
 	create() {
-		this.minimapCamera = this.cameras.add(660, 40, 125, 125, false, 'minimap');
+		this.minimapCamera = this.cameras.add(0, 40, 800, 800, false, 'minimap').setVisible(false);
 		this.minimapObjectLayer = this.add.container(0, 0);
 		this.minimapObjectLayer.setDepth(1);
 		// Create and initialize the map
@@ -48,8 +49,8 @@ export class Game extends Scene {
 		const mapHeight = this.map.mapHeight;
 		// const centerTileX = Math.floor(mapWidth / 2) - 1;
 		// const centerTileY = Math.floor(mapHeight / 2) - 1;
-		const centerTileX = 4;
-		const centerTileY = 3;
+		const centerTileX = 12;
+		const centerTileY = 7;
 
 		const startPos = this.map.layer.getTileAt(centerTileX, centerTileY);
 		const username = 'shrube'; // Replace with actual username retrieval
@@ -58,7 +59,8 @@ export class Game extends Scene {
 		this.player.faceDirection('left', { update: true });
 
 		// Adjust the player's initial position to be centered on the tile
-		this.player.setPosition(startPos.pixelX, startPos.pixelY - this.player.offsetY);
+		const { x, y } = this.map.getTilePosition(centerTileX, centerTileY);
+		this.player.setPosition(x, y - this.player.offsetY);
 		this.player.setDepth(this.player.tileY + 1);
 
 		// Update player's tile coordinates
@@ -98,9 +100,23 @@ export class Game extends Scene {
 		if (this.mapToggled) {
 			this.cameras.remove(this.minimapCamera, false);
 			this.mapToggled = false;
+			this.cameras.main.setAlpha(1);
+			this.cameras.main.postFX.clear();
+
+			ui.handleButtonAction('chat', 'open');
+			ui.handleButtonAction('inventory', 'open');
+			ui.handleButtonAction('debug', 'open');
 		} else {
 			this.cameras.addExisting(this.minimapCamera, false);
 			this.mapToggled = true;
+			this.cameras.main.setAlpha(0.5);
+			this.minimapCamera.setVisible(true);
+
+			ui.handleButtonAction('chat', 'close');
+			ui.handleButtonAction('inventory', 'close');
+			ui.handleButtonAction('debug', 'close');
+
+			this.cameras.main.postFX.addColorMatrix().blackWhite(true);
 		}
 	}
 
@@ -109,14 +125,14 @@ export class Game extends Scene {
 	addMinimap() {
 		this.cameras.main.ignore(this.minimapObjectLayer);
 
-		this.minimapCamera.startFollow(this.player);
-		this.minimapCamera.setZoom(0.15);
+		this.minimapCamera.setZoom(0.225);
 		this.minimapCamera.fadeIn(500, 0, 0, 0);
+		this.minimapCamera.scrollX = -406;
+		this.minimapCamera.scrollY = 964;
 
 		// Create a circular mask for the minimap
 		this.minimapShape = this.add.circle(0, 0, 500, 0x20252e, 0);
 		this.minimapMask = this.minimapShape.createGeometryMask();
-		this.minimapObjectLayer.setMask(this.minimapMask);
 		this.cameras.main.ignore(this.minimapShape);
 
 		this.map.initMinimap();
@@ -131,7 +147,21 @@ export class Game extends Scene {
 		this.minimapCamera.ignore(this.player);
 
 		this.cameras.main.ignore(this.minimapObjectLayer);
-		this.cameras.remove(this.minimapCamera, false);
+
+		this.input.on(
+			'wheel',
+			(
+				p: Phaser.Input.Pointer,
+				gameObjects: any[],
+				deltaX: number,
+				deltaY: number,
+				deltaZ: number
+			) => {
+				const zoomFactor = this.minimapCamera.zoom + deltaY * 0.01;
+
+				this.minimapCamera.setZoom(zoomFactor);
+			}
+		);
 
 		this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
 			if (!p.isDown) return;
@@ -143,8 +173,10 @@ export class Game extends Scene {
 				p.y >= this.minimapCamera.y &&
 				p.y <= this.minimapCamera.y + this.minimapCamera.height
 			) {
-				this.minimapCamera.x += p.x - p.prevPosition.x;
-				this.minimapCamera.y += p.y - p.prevPosition.y;
+				this.minimapCamera.scrollX -= (p.x - p.prevPosition.x) / this.minimapCamera.zoom;
+				this.minimapCamera.scrollY -= (p.y - p.prevPosition.y) / this.minimapCamera.zoom;
+
+				console.log(this.minimapCamera.scrollX, this.minimapCamera.scrollY);
 			}
 		});
 	}
@@ -175,8 +207,10 @@ export class Game extends Scene {
 	}
 
 	createPlayer(tileX: number, tileY: number, name: string) {
-		const player = new PlayerSprite(this, tileX, tileY, name, this.map.tileHeight);
+		const player = new PlayerSprite(this, 0, 0, name, this.map.tileHeight);
 		this.players.push(player);
+		player.tileX = tileX;
+		player.tileY = tileY;
 		this.map.addEntity(player, tileX, tileY);
 		return player;
 	}

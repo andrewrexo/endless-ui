@@ -60,8 +60,7 @@ export class PlayerSprite extends GameObjects.Container {
 			})
 			.setVisible(false);
 
-		this.usernameText.setDepth(3);
-		this.usernameText.setPosition(4, -24);
+		this.usernameText.setPosition(0, -24);
 		this.usernameText.setOrigin(0.5);
 
 		this.playerSprite.setInteractive();
@@ -103,7 +102,8 @@ export class PlayerSprite extends GameObjects.Container {
 		});
 
 		this.particles.setDepth(4);
-		this.offsetY = Math.round(this.playerSprite.height / 2); // Set offset to 1/4 of tile height
+		this.offsetY = Math.round(this.playerSprite.height / 3); // Set offset to 1/4 of tile height
+
 		scene.add.existing(this);
 	}
 
@@ -141,8 +141,9 @@ export class PlayerSprite extends GameObjects.Container {
 			return;
 		}
 
-		this.setDepth(this.y + 20);
+		this.setDepth(this.y + this.playerSprite.height);
 		this.mapIcon.setPosition(this.x, this.y);
+		this.usernameText.setDepth(this.y + this.playerSprite.height * 10);
 	}
 
 	updateMovement(tileWidth: number) {

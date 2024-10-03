@@ -32,7 +32,10 @@ export default class Preloader extends Scene {
 		});
 
 		this.load.on('filecomplete', (file: string) => {
-			this.text.setText(`loaded ${file}. ${this.progress * 100}% complete.`);
+			this.text.setColor('#00ff00');
+			this.text.setBackgroundColor('#000000');
+			this.text.setPadding(4, 4, 4, 4);
+			this.text.setText(`loaded ${file}\n${(this.progress * 100).toFixed(2)}% complete.`);
 		});
 	}
 
@@ -64,9 +67,6 @@ export default class Preloader extends Scene {
 		fadeRect.setAlpha(1); // Start fully opaque
 
 		this.text.setText(`loading ${this.progress * 100}% complete. sending you to the game...`);
-		this.text.setColor('#00ff00');
-		this.text.setBackgroundColor('#000000');
-		this.text.setPadding(4, 4, 4, 4);
 
 		this.scene.transition({
 			target: 'Game',
