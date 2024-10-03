@@ -12,10 +12,15 @@
 
 	let mounted = $state(false);
 	let buttons = $state([
-		{ icon: FluentChatMail20Filled, target: 'chat', action: 'toggle' },
-		{ icon: PhTreasureChestFill, target: 'inventory', action: 'toggle' },
-		{ icon: GisLocationMan, target: 'minimap', action: 'toggle' },
-		{ icon: FluentWrenchSettings24Filled, target: 'settings', action: 'toggle' }
+		{ icon: FluentChatMail20Filled, target: 'chat', action: 'toggle', hotkey: 'ctrl + c' },
+		{ icon: PhTreasureChestFill, target: 'inventory', action: 'toggle', hotkey: 'ctrl + i' },
+		{ icon: GisLocationMan, target: 'minimap', action: 'toggle', hotkey: 'ctrl + m' },
+		{
+			icon: FluentWrenchSettings24Filled,
+			target: 'settings',
+			action: 'toggle',
+			hotkey: 'ctrl + esc'
+		}
 	]);
 
 	$effect(() => {
@@ -25,13 +30,15 @@
 
 {#each buttons as button, index}
 	{#if mounted}
-		<button
-			onclick={() => ui.handleButtonAction(button.target, button.action as ButtonAction)}
-			transition:fly={{ x: 100, duration: 300, delay: index * 100 + 400 }}
-			class="btn btn-sm px-2 transition-all hover:scale-105 hover:brightness-125"
-		>
-			{@render button.icon({ size: 32 })}
-		</button>
+		<div class="tooltip capitalize" data-tip={button.target}>
+			<button
+				onclick={() => ui.handleButtonAction(button.target, button.action as ButtonAction)}
+				transition:fly={{ x: 100, duration: 300, delay: index * 100 + 400 }}
+				class="btn btn-sm px-2 transition-all hover:scale-105 hover:brightness-125"
+			>
+				{@render button.icon({ size: 32 })}
+			</button>
+		</div>
 	{/if}
 {/each}
 
