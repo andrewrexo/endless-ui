@@ -340,7 +340,7 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 						sprite.y += 8;
 
 						// Set the sprite's depth based on its bottom edge
-						sprite.setDepth(worldPos.y);
+						sprite.setDepth(worldPos.y + 16);
 					}
 				}
 			}

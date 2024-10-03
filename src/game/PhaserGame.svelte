@@ -28,10 +28,10 @@
 
 <div
 	id="game-container"
-	class={`relative w-full h-full ${isInGame ? 'scale-100' : 'scale-150'} transition-all duration-500`}
+	class={`relative h-full w-full ${isInGame ? 'scale-100' : 'scale-150'} transition-all duration-500`}
 >
 	<UI />
-	<Context position={{ x: 0, y: 0 }} />
+	<Context />
 </div>
 
 <style lang="postcss">

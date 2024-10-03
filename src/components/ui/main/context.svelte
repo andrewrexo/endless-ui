@@ -16,8 +16,6 @@
 		option.callback();
 	};
 
-	$inspect(ui);
-
 	const updateAction = (option: string) => {
 		action.action = { action: option, text: ui.contextMenuState.name };
 	};
