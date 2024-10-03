@@ -23,7 +23,7 @@ export class PlayerSprite extends GameObjects.Container {
 	mapIcon: GameObjects.Sprite;
 	public declare scene: GameScene;
 
-	private usernameText: GameObjects.Text;
+	public usernameText: GameObjects.Text;
 	private playerSprite: GameObjects.Sprite;
 	private lastAttackTime: number = 0;
 	private animationMap = {
@@ -35,6 +35,7 @@ export class PlayerSprite extends GameObjects.Container {
 	private particles: Phaser.GameObjects.Particles.ParticleEmitter;
 	private chatBubble: ChatBubble | null = null;
 	private chatBubbleTimer: Phaser.Time.TimerEvent | null = null;
+	public isLocalPlayer: boolean = false;
 
 	constructor(scene: GameScene, x: number, y: number, username: string, tileHeight: number) {
 		super(scene, x, y);
@@ -42,7 +43,7 @@ export class PlayerSprite extends GameObjects.Container {
 		this.name = username;
 		this.actionDescription = username;
 
-		this.playerSprite = scene.add.sprite(x, y, this.textureKey, 1);
+		this.playerSprite = scene.add.sprite(0, 0, this.textureKey, 1);
 		this.playerSprite.setOrigin(0.5);
 		this.add(this.playerSprite);
 		this.createAnimations();
@@ -102,7 +103,7 @@ export class PlayerSprite extends GameObjects.Container {
 		});
 
 		this.particles.setDepth(4);
-		this.offsetY = Math.round(this.playerSprite.height / 3); // Set offset to 1/4 of tile height
+		this.offsetY = Math.round(tileHeight / 2);
 
 		scene.add.existing(this);
 	}
@@ -137,8 +138,10 @@ export class PlayerSprite extends GameObjects.Container {
 	}
 
 	update() {
-		if (this.mapIcon.x === this.x && this.mapIcon.y === this.y) {
-			return;
+		super.update();
+
+		if (this.isMoving) {
+			this.updateMovement(this.scene.map.tileWidth);
 		}
 
 		this.setDepth(this.y + this.playerSprite.height);
@@ -149,13 +152,21 @@ export class PlayerSprite extends GameObjects.Container {
 	updateMovement(tileWidth: number) {
 		this.movementProgress += this.moveSpeed;
 
+		const startPos = this.scene.map.getTilePosition(this.tileX, this.tileY);
+		const endPos = this.scene.map.getTilePosition(this.targetTileX, this.targetTileY);
+		const progress = this.movementProgress / tileWidth;
+
+		this.x = Math.round(startPos.x + (endPos.x - startPos.x) * progress);
+		this.y = Math.round(startPos.y + (endPos.y - startPos.y) * progress - this.offsetY);
+
 		if (this.movementProgress >= tileWidth) {
-			this.isIdling = false;
+			this.isIdling = true;
 			this.tileX = this.targetTileX;
 			this.tileY = this.targetTileY;
 			this.isMoving = false;
 			this.movementProgress = 0;
 			this.isAttacking = false;
+			this.playIdleAnimation();
 			return true;
 		}
 
@@ -307,5 +318,49 @@ export class PlayerSprite extends GameObjects.Container {
 		const animKey = this.animationMap[this.direction].idle;
 		this.playerSprite.setFlipX(['left', 'down'].includes(this.direction));
 		this.playAnimation(animKey);
+	}
+
+	serverUpdate(data: { x: number; y: number; targetTileX: number; targetTileY: number }) {
+		if (this.isLocalPlayer) return;
+
+		this.tileX = data.x;
+		this.tileY = data.y;
+		this.targetTileX = data.targetTileX;
+		this.targetTileY = data.targetTileY;
+
+		console.log(this.targetTileX, this.targetTileY, this.tileY, this.tileX);
+
+		if (this.targetTileX !== this.tileX || this.targetTileY !== this.tileY) {
+			const dx = this.targetTileX - this.tileX;
+			const dy = this.targetTileY - this.tileY;
+			this.startMovement(dx, dy);
+		} else {
+			this.isMoving = false;
+			this.movementProgress = 0;
+			const { x, y } = this.scene.map.getTilePosition(this.tileX, this.tileY);
+			this.setPosition(x, y - this.offsetY);
+		}
+	}
+
+	updateLocalPosition(targetTileX: number, targetTileY: number) {
+		this.targetTileX = targetTileX;
+		this.targetTileY = targetTileY;
+		this.isMoving = true;
+		this.movementProgress = 0;
+	}
+
+	setImmediatePosition(tileX: number, tileY: number) {
+		this.tileX = tileX;
+		this.tileY = tileY;
+		this.targetTileX = tileX;
+		this.targetTileY = tileY;
+		const { x, y } = this.scene.map.getTilePosition(tileX, tileY);
+		this.setPosition(x, y - this.offsetY);
+		this.isMoving = false;
+		this.movementProgress = 0;
+		this.playIdleAnimation();
+		console.log(
+			`Set ${this.name} to immediate position: tile (${tileX}, ${tileY}), pixel (${x}, ${y - this.offsetY})`
+		);
 	}
 }

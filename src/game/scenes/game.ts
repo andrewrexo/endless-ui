@@ -7,34 +7,36 @@ import { NPC } from '../entities/npc';
 import { action } from '../../components/ui/main/action.svelte';
 import type { NativeUI } from './native-ui';
 import { ui } from '$lib/user-interface.svelte';
+import { connect } from '../../hooks/connect';
+import type { Client, Room } from 'colyseus.js';
+import type { State } from '../../server/room/home-room';
 
 export class Game extends Scene {
 	map!: MapRenderer; // Add the '!' to fix the initialization error
 	cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-	player!: PlayerSprite;
+	localPlayer: PlayerSprite | null = null;
 	currentPath: { x: number; y: number }[] = [];
 	private attackKey!: Phaser.Input.Keyboard.Key;
 	private pendingDestination: { x: number; y: number } | null = null;
 	private keyPressStartTime: number = 0;
 	private keyPressThreshold: number = 80; // milliseconds
 	private mapToggled: boolean = false;
+	private client: Client;
 	public npcs: NPC[] = [];
 	public players: PlayerSprite[] = [];
 	public minimapObjectLayer!: Phaser.GameObjects.Container;
 	public minimapCamera!: Phaser.Cameras.Scene2D.Camera;
 	private inputEnabled: boolean = true;
-	private isAttackKeyDown: boolean = false;
 	private lastAttackTime: number = 0;
 	private contextMenu: Phaser.GameObjects.DOMElement | null = null;
-	private lastUpdate: number = 0;
-	private frameTime: number = 0;
 	private fixedUpdateRate: number = 1000 / 60; // Fixed update rate for 60 FPS
 	private accumulatedTime: number = 0;
 	private minimapShape!: Phaser.GameObjects.Shape;
-	private minimapMask!: Phaser.Display.Masks.GeometryMask;
+	private room: Room | null = null;
 
 	constructor() {
 		super('Game');
+		this.client = connect();
 	}
 
 	create() {
@@ -53,26 +55,15 @@ export class Game extends Scene {
 		const centerTileY = 7;
 
 		const startPos = this.map.layer.getTileAt(centerTileX, centerTileY);
-		const username = 'shrube'; // Replace with actual username retrieval
 
-		this.player = this.createPlayer(startPos.x, startPos.y, username);
-		this.player.faceDirection('left', { update: true });
-
-		// Adjust the player's initial position to be centered on the tile
-		const { x, y } = this.map.getTilePosition(centerTileX, centerTileY);
-		this.player.setPosition(x, y - this.player.offsetY);
-		this.player.setDepth(this.player.tileY + 1);
-
-		// Update player's tile coordinates
-		this.player.tileX = centerTileX;
-		this.player.tileY = centerTileY;
+		this.localPlayer = this.createPlayer(centerTileX, centerTileY, '');
 
 		this.cameras.main.setZoom(1);
-		this.cameras.main.startFollow(this.player, false, 1, 1);
+		this.cameras.main.startFollow(this.localPlayer, false, 1, 1);
 		this.cameras.main.setRoundPixels(true);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
 
-		this.minimapCamera.startFollow(this.player);
+		this.minimapCamera.startFollow(this.localPlayer);
 
 		// Render UI
 		this.scene.launch('NativeUI');
@@ -96,6 +87,126 @@ export class Game extends Scene {
 
 		this.createNPC('mage', 2, 2, 'Mage');
 		this.addMinimap();
+
+		this.connect();
+	}
+
+	addClientHandlers(room: Room<State>) {
+		room.state.players.onAdd((player, key) => {
+			console.log('player added', player);
+			if (key === room.sessionId) {
+				// This is the local player
+				if (!this.localPlayer) {
+					this.localPlayer = this.createPlayer(
+						player.x,
+						player.y,
+						`Player ${room.sessionId.substr(0, 4)}`
+					);
+					this.localPlayer.isLocalPlayer = true;
+					this.cameras.main.startFollow(this.localPlayer, false, 1, 1);
+					this.minimapCamera.startFollow(this.localPlayer);
+				} else {
+					this.localPlayer.usernameText.setText(`Player ${room.sessionId.substr(0, 4)}`);
+				}
+			} else {
+				// This is a remote player
+				if (!this.players.find((p) => p.name === player.name)) {
+					this.createPlayer(player.x, player.y, player.name);
+				} else {
+					console.log('already exists');
+				}
+			}
+		});
+
+		room.state.players.onChange((player, key) => {
+			if (player) {
+				const playerSprite = this.players.find((p) => p && p.name === player.name);
+				if (playerSprite && !playerSprite.isLocalPlayer) {
+					playerSprite.serverUpdate(player);
+				}
+			}
+		});
+
+		room.state.players.onRemove((player, key) => {
+			const playerIndex = this.players.findIndex((p) => p.name === player.name);
+			if (playerIndex !== -1) {
+				const removedPlayer = this.players.splice(playerIndex, 1)[0];
+				removedPlayer.destroy();
+			}
+		});
+
+		room.onMessage('player:joined', (message) => {
+			console.log('player:joined', message);
+			if (message.sessionId !== room.sessionId) {
+				this.createPlayer(message.x, message.y, message.name);
+			}
+		});
+
+		room.onMessage('player:move', (message) => {
+			console.log('player:move', message);
+			const playerSprite = this.players.find((p) => p.name === message.name);
+			if (playerSprite) {
+				playerSprite.startMovement(message.dx, message.dy);
+				playerSprite.serverUpdate({
+					x: message.x,
+					y: message.y,
+					targetTileX: message.targetTileX,
+					targetTileY: message.targetTileY
+				});
+			}
+		});
+
+		room.onMessage('player:moved', (message) => {
+			console.log('player:moved', message);
+			const playerSprite = this.players.find((p) => p.name !== this.localPlayer?.name);
+			if (playerSprite) {
+				playerSprite.serverUpdate({
+					x: message.x,
+					y: message.y,
+					targetTileX: message.targetTileX,
+					targetTileY: message.targetTileY
+				});
+			}
+		});
+
+		room.onMessage('player:disconnected', (message) => {
+			console.log('disconnected', message);
+		});
+
+		room.onMessage('player:reconnected', (message) => {
+			console.log('player:reconnected', message);
+			const playerSprite = this.players.find((p) => p.name === message.sessionId);
+			if (playerSprite) {
+				// Restore the player's appearance
+				playerSprite.setAlpha(1);
+			}
+		});
+	}
+
+	connect() {
+		this.client
+			.joinOrCreate('home_room')
+			.then((room: Room) => {
+				this.addClientHandlers(room);
+				console.log(room.sessionId, 'joined', room.name);
+
+				// Generate starting position
+				const centerTileX = 12;
+				const centerTileY = 7;
+
+				room.send('player:add', {
+					x: centerTileX,
+					y: centerTileY,
+					targetTileX: centerTileX,
+					targetTileY: centerTileY,
+					name: 'Player ' + room.sessionId.substr(0, 4)
+				});
+
+				this.room = room;
+			})
+			.catch((e) => {
+				console.log('JOIN ERROR', e);
+			});
 	}
 
 	toggleMinimap() {
@@ -136,10 +247,6 @@ export class Game extends Scene {
 			0,
 			(-(this.map.mapHeight * this.map.tileHeight) * this.minimapCamera.zoom) / 2
 		);
-		// Create a circular mask for the minimap
-		this.minimapShape = this.add.circle(0, 0, 500, 0x20252e, 0);
-		this.minimapMask = this.minimapShape.createGeometryMask();
-		this.cameras.main.ignore(this.minimapShape);
 
 		this.map.initMinimap();
 
@@ -148,9 +255,9 @@ export class Game extends Scene {
 			this.minimapCamera.ignore(npc);
 		});
 
-		this.minimapObjectLayer.add(this.player.mapIcon);
-		this.minimapObjectLayer.bringToTop(this.player.mapIcon);
-		this.minimapCamera.ignore(this.player);
+		this.minimapObjectLayer.add(this.localPlayer!.mapIcon);
+		this.minimapObjectLayer.bringToTop(this.localPlayer!.mapIcon);
+		this.minimapCamera.ignore(this.localPlayer!);
 
 		this.cameras.main.ignore(this.minimapObjectLayer);
 
@@ -213,11 +320,21 @@ export class Game extends Scene {
 	}
 
 	createPlayer(tileX: number, tileY: number, name: string) {
+		const { x, y } = this.map.getTilePosition(tileX, tileY);
 		const player = new PlayerSprite(this, 0, 0, name, this.map.tileHeight);
+
 		this.players.push(player);
-		player.tileX = tileX;
-		player.tileY = tileY;
 		this.map.addEntity(player, tileX, tileY);
+
+		this.minimapObjectLayer.add(player.mapIcon);
+
+		player.setImmediatePosition(tileX, tileY);
+		player.setDepth(y + this.map.tileHeight / 2);
+
+		console.log(
+			`Created player ${name} at tile (${tileX}, ${tileY}), pixel (${x}, ${y - this.map.tileHeight / 2})`
+		);
+
 		return player;
 	}
 
@@ -227,27 +344,24 @@ export class Game extends Scene {
 		while (this.accumulatedTime >= this.fixedUpdateRate) {
 			this.accumulatedTime -= this.fixedUpdateRate;
 
-			if (this.inputEnabled) {
-				this.player.update();
+			if (this.inputEnabled && this.localPlayer) {
 				this.handlePlayerInput(time * 1);
 			}
 
-			this.updatePlayerMovement();
+			this.players.forEach((player) => player.update());
 
-			if (!this.player.isMoving) {
-				this.movePlayerAlongPath();
-			}
-
-			if (
-				this.map.activeTile &&
-				this.map.activeTile.x === this.player.tileX &&
-				this.map.activeTile.y === this.player.tileY
-			) {
-				this.map.emit('navigationend');
-			}
-
-			if (this.minimapShape.x !== this.player.x && this.minimapShape.y !== this.player.y) {
-				this.minimapShape.setPosition(this.player.x, this.player.y);
+			if (this.localPlayer) {
+				if (this.localPlayer.isMoving) {
+					// Check if the player has reached their immediate destination
+					if (
+						this.localPlayer.tileX === this.localPlayer.targetTileX &&
+						this.localPlayer.tileY === this.localPlayer.targetTileY
+					) {
+						this.recalculatePath();
+					}
+				} else {
+					this.movePlayerAlongPath();
+				}
 			}
 
 			this.npcs.forEach((npc) => npc.update());
@@ -259,7 +373,7 @@ export class Game extends Scene {
 
 		const closestTile = this.findClosestTile(tile);
 
-		if (this.player.isMoving) {
+		if (this.localPlayer!.isMoving) {
 			console.log('Player is moving, setting pending destination');
 			this.pendingDestination = { x: closestTile.x, y: closestTile.y };
 			return;
@@ -281,20 +395,22 @@ export class Game extends Scene {
 			this.contextMenu.setVisible(false);
 		}
 
-		if (this.player.isMoving) {
-			console.log('Player is moving, setting pending destination');
-			this.pendingDestination = { x: tile.x, y: tile.y };
-			return;
-		}
-
 		this.setNewDestination(tile);
 	};
 
 	setNewDestination(tile: { x: number; y: number }) {
-		const startX = this.player.tileX;
-		const startY = this.player.tileY;
+		if (!this.localPlayer) return;
+
+		let startX = this.localPlayer.tileX;
+		let startY = this.localPlayer.tileY;
 		const endX = tile.x;
 		const endY = tile.y;
+
+		// If the player is already moving, use their target position as the start
+		if (this.localPlayer.isMoving) {
+			startX = this.localPlayer.targetTileX;
+			startY = this.localPlayer.targetTileY;
+		}
 
 		const path = this.map.findPath(startX, startY, endX, endY);
 
@@ -302,24 +418,63 @@ export class Game extends Scene {
 		if (path.length > 1) {
 			this.currentPath = path.slice(1); // Remove the first element (current position)
 			console.log('Setting current path:', this.currentPath);
+
+			// If the player is not moving, start movement immediately
+			if (!this.localPlayer.isMoving) {
+				this.movePlayerAlongPath();
+			}
 		} else {
 			console.log('No valid path found');
 		}
 	}
 
 	movePlayerAlongPath() {
-		if (this.currentPath.length > 0 && !this.player.isMoving) {
+		if (this.currentPath.length > 0 && this.localPlayer && !this.localPlayer.isMoving) {
 			const nextTile = this.currentPath[0];
 			console.log('Moving to next tile:', nextTile);
-			const dx = Math.floor(nextTile.x - this.player.tileX);
-			const dy = Math.floor(nextTile.y - this.player.tileY);
-			this.player.startMovement(dx, dy);
+			this.room?.send('player:move', {
+				x: this.localPlayer.tileX,
+				y: this.localPlayer.tileY,
+				targetTileX: nextTile.x,
+				targetTileY: nextTile.y
+			});
+			const dx = Math.floor(nextTile.x - this.localPlayer.tileX);
+			const dy = Math.floor(nextTile.y - this.localPlayer.tileY);
+			this.localPlayer.startMovement(dx, dy);
 			this.currentPath.shift();
+		} else {
+			if (
+				this.map.activeTile &&
+				this.map.activeTile.x === this.localPlayer.tileX &&
+				this.map.activeTile.y === this.localPlayer.tileY
+			) {
+				this.room?.send('player:move', {
+					x: this.localPlayer.tileX,
+					y: this.localPlayer.tileY,
+					targetTileX: this.localPlayer.tileX,
+					targetTileY: this.localPlayer.tileY
+				});
+				this.map.emit('navigationend');
+			}
+		}
+	}
+
+	// Add this new method to recalculate the path
+	recalculatePath() {
+		if (this.currentPath.length > 0 && this.localPlayer) {
+			const endTile = this.currentPath[this.currentPath.length - 1];
+			this.setNewDestination(endTile);
 		}
 	}
 
 	handlePlayerInput(fixedTime: number) {
-		if (!this.inputEnabled || this.player.isMoving || this.currentPath.length > 0) return;
+		if (
+			!this.inputEnabled ||
+			!this.localPlayer ||
+			this.localPlayer.isMoving ||
+			this.currentPath.length > 0
+		)
+			return;
 
 		let dx = 0;
 		let dy = 0;
@@ -349,13 +504,20 @@ export class Game extends Scene {
 
 			if (keyPressDuration >= this.keyPressThreshold) {
 				// Key held long enough, initiate movement
-				const targetTileX = this.player.tileX + dx;
-				const targetTileY = this.player.tileY + dy;
+				const targetTileX = this.localPlayer.tileX + dx;
+				const targetTileY = this.localPlayer.tileY + dy;
 				if (this.map.isValidTile(targetTileX, targetTileY)) {
-					this.player.startMovement(dx, dy);
+					// Send the move message to the server
+					this.room?.send('player:move', {
+						x: this.localPlayer.tileX,
+						y: this.localPlayer.tileY,
+						targetTileX: targetTileX,
+						targetTileY: targetTileY
+					});
+					this.localPlayer.startMovement(dx, dy);
 				}
-			} else if (keyPressDuration && this.player.direction != direction) {
-				this.player.faceDirection(direction, { update: true });
+			} else if (keyPressDuration && this.localPlayer.direction != direction) {
+				this.localPlayer.faceDirection(direction, { update: true });
 			}
 		} else {
 			// No key pressed, reset the start time
@@ -363,39 +525,8 @@ export class Game extends Scene {
 		}
 	}
 
-	updatePlayerMovement() {
-		if (!this.player.isMoving) {
-			if (!this.player.isAttacking && !this.player.isIdling) {
-				this.player.isIdling = true;
-				this.player.playIdleAnimation();
-			}
-			return;
-		}
-
-		this.player.updateMovement(this.map.tileWidth);
-
-		const startPos = this.map.getTilePosition(this.player.tileX, this.player.tileY);
-		const endPos = this.map.getTilePosition(this.player.targetTileX, this.player.targetTileY);
-		const progress = this.player.movementProgress / this.map.tileWidth;
-
-		this.player.x = Math.round(startPos.x + (endPos.x - startPos.x) * progress);
-		this.player.y = Math.round(
-			startPos.y + (endPos.y - startPos.y) * progress - this.player.offsetY
-		);
-
-		if (!this.player.isMoving) {
-			// Check for pending destination after movement is complete
-			if (this.pendingDestination) {
-				console.log('Processing pending destination after movement');
-				const newDestination = this.pendingDestination;
-				this.pendingDestination = null;
-				this.setNewDestination(newDestination);
-			}
-		}
-	}
-
 	sendMessage(message: string) {
-		this.player.showChatBubble(message);
+		this.localPlayer!.showChatBubble(message);
 	}
 
 	changeScene() {
@@ -420,8 +551,8 @@ export class Game extends Scene {
 	handleShooting() {
 		const currentTime = this.time.now;
 		if (this.attackKey.isDown) {
-			if (currentTime - this.lastAttackTime >= this.player.attackCooldown) {
-				this.player.attack();
+			if (currentTime - this.lastAttackTime >= this.localPlayer!.attackCooldown) {
+				this.localPlayer!.attack();
 			}
 		}
 	}
