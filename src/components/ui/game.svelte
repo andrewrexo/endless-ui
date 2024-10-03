@@ -15,6 +15,7 @@
 	import Panel from './primitives/panel.svelte';
 	import Status from './status.svelte';
 	import Settings from './settings.svelte';
+	import Tasks from './tasks.svelte';
 
 	let chatboxText = $state('');
 	let isChatboxFocused = $state(false);
@@ -90,8 +91,8 @@
 			ui.handleButtonAction('inventory', 'open');
 			ui.handleButtonAction('status', 'open');
 			ui.handleButtonAction('debug', 'open');
-			ui.handleButtonAction('minimap', 'open');
-		}, 500);
+			ui.handleButtonAction('tasks', 'open');
+		}, 2000);
 
 		return () => {
 			clearTimeout(showUi);
@@ -128,6 +129,10 @@
 
 	{#if ui.interfaces.debug}
 		<Debug />
+	{/if}
+
+	{#if ui.interfaces.tasks}
+		<Tasks />
 	{/if}
 
 	<Shop />

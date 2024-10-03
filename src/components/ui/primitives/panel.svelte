@@ -42,7 +42,7 @@
 	{...props}
 >
 	{#if component && component.title}
-		<span class="px-1 tracking-wider">{component.title}</span>
+		<span class="tracking-wider">{component.title}</span>
 	{/if}
 	{@render children()}
 </div>

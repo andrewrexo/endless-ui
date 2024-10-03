@@ -13,7 +13,8 @@ export type ButtonTarget =
 	| 'status'
 	| 'debug'
 	| 'shop'
-	| 'minimap';
+	| 'minimap'
+	| 'tasks';
 
 export type ButtonAction = 'toggle' | 'open' | 'close';
 
@@ -50,7 +51,8 @@ export function createUserInterface() {
 		status: false,
 		debug: false,
 		shop: false,
-		minimap: false
+		minimap: false,
+		tasks: false
 	});
 
 	let contextMenuState: ContextMenuState = $state({
@@ -134,7 +136,8 @@ export function createUserInterface() {
 		{ id: 'context', x: 0, y: 0 },
 		{ id: 'inventory', x: 647, y: 382 },
 		{ id: 'debug', title: 'Debug', x: 15, y: 45 },
-		{ id: 'minimap', x: 590, y: 45 }
+		{ id: 'minimap', x: 590, y: 45 },
+		{ id: 'tasks', title: 'Tasks', x: 604, y: 46 }
 	]);
 
 	let interfaceHotkeys = $state([
@@ -142,7 +145,8 @@ export function createUserInterface() {
 		{ id: 'inventory', hotkey: 'i', modifier: false },
 		{ id: 'status', hotkey: 's', modifier: false },
 		{ id: 'debug', hotkey: 'd', modifier: false },
-		{ id: 'minimap', hotkey: 'm', modifier: false }
+		{ id: 'minimap', hotkey: 'm', modifier: false },
+		{ id: 'tasks', hotkey: 't', modifier: false }
 	]);
 
 	function hidePanel() {

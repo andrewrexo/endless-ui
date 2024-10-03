@@ -72,6 +72,8 @@ export class Game extends Scene {
 		this.cameras.main.setRoundPixels(true);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
 
+		this.minimapCamera.startFollow(this.player);
+
 		// Render UI
 		this.scene.launch('NativeUI');
 
@@ -106,6 +108,7 @@ export class Game extends Scene {
 			ui.handleButtonAction('chat', 'open');
 			ui.handleButtonAction('inventory', 'open');
 			ui.handleButtonAction('debug', 'open');
+			ui.handleButtonAction('tasks', 'open');
 		} else {
 			this.cameras.addExisting(this.minimapCamera, false);
 			this.mapToggled = true;
@@ -115,6 +118,7 @@ export class Game extends Scene {
 			ui.handleButtonAction('chat', 'close');
 			ui.handleButtonAction('inventory', 'close');
 			ui.handleButtonAction('debug', 'close');
+			ui.handleButtonAction('tasks', 'close');
 
 			this.cameras.main.postFX.addColorMatrix().blackWhite(true);
 		}
@@ -125,11 +129,13 @@ export class Game extends Scene {
 	addMinimap() {
 		this.cameras.main.ignore(this.minimapObjectLayer);
 
-		this.minimapCamera.setZoom(0.225);
+		this.minimapCamera.setZoom(0.2);
 		this.minimapCamera.fadeIn(500, 0, 0, 0);
-		this.minimapCamera.scrollX = -406;
-		this.minimapCamera.scrollY = 964;
 
+		this.minimapCamera.setPosition(
+			0,
+			(-(this.map.mapHeight * this.map.tileHeight) * this.minimapCamera.zoom) / 2
+		);
 		// Create a circular mask for the minimap
 		this.minimapShape = this.add.circle(0, 0, 500, 0x20252e, 0);
 		this.minimapMask = this.minimapShape.createGeometryMask();
