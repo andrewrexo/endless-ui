@@ -9,6 +9,7 @@ export class Player extends Schema {
 	@type('number') targetTileX: number = 0;
 	@type('number') targetTileY: number = 0;
 	@type('boolean') isConnected: boolean = true;
+	@type('string') direction: string = 'down';
 }
 
 export class State extends Schema {
@@ -52,11 +53,30 @@ export class HomeRoom extends Room<State> {
 
 			const player = this.state.players.get(client.sessionId);
 			if (player) {
-				player.x = message.x;
-				player.y = message.y;
-				player.targetTileX = message.targetTileX;
-				player.targetTileY = message.targetTileY;
+				if (player.x !== message.x) player.x = message.x;
+				if (player.y !== message.y) player.y = message.y;
+				if (player.targetTileX !== message.targetTileX) player.targetTileX = message.targetTileX;
+				if (player.targetTileY !== message.targetTileY) player.targetTileY = message.targetTileY;
+				if (player.name !== message.name) player.name = message.name;
 			}
+		});
+
+		this.onMessage('player:face', (client, message) => {
+			const player = this.state.players.get(client.sessionId);
+
+			if (player) {
+				player.direction = message.direction;
+			}
+
+			this.broadcast(
+				'player:face',
+				{
+					sessionId: client.sessionId,
+					direction: player.direction,
+					name: player.name
+				},
+				{ except: client }
+			);
 		});
 
 		this.onMessage('player:move', (client, message) => {

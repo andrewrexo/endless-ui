@@ -61,7 +61,6 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		this.load();
 		// Create the tilemap layer
 		const layer = this.map.createLayer(0, this.tileset, 0, 0);
-		console.log(this.map.layers);
 
 		if (!layer) {
 			console.error('Failed to create tilemap layer');

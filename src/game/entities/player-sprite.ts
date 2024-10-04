@@ -16,7 +16,7 @@ export class PlayerSprite extends GameObjects.Container {
 	isShooting: boolean = false;
 	isIdling: boolean = false;
 	isAttacking: boolean = false;
-	textureKey: string = 'fighter';
+	textureKey: string = 'mage';
 	action: string = 'Player';
 	actionDescription: string = '';
 	isHover: boolean = false;
@@ -38,7 +38,7 @@ export class PlayerSprite extends GameObjects.Container {
 	public isLocalPlayer: boolean = false;
 
 	constructor(scene: GameScene, x: number, y: number, username: string, tileHeight: number) {
-		super(scene, x, y);
+		super(scene, 0, 0);
 
 		this.name = username;
 		this.actionDescription = username;
@@ -142,11 +142,34 @@ export class PlayerSprite extends GameObjects.Container {
 
 		if (this.isMoving) {
 			this.updateMovement(this.scene.map.tileWidth);
+		} else {
+			if (this.needsDirectionUpdate()) {
+				this.faceDirection(this.direction, { update: true });
+			}
 		}
 
 		this.setDepth(this.y + this.playerSprite.height);
 		this.mapIcon.setPosition(this.x, this.y);
 		this.usernameText.setDepth(this.y + this.playerSprite.height * 10);
+	}
+
+	private needsDirectionUpdate(): boolean {
+		const isFlipped = this.playerSprite.flipX;
+		const currentAnim = this.playerSprite.anims.currentAnim;
+		const expectedIdleAnim = this.animationMap[this.direction]?.idle;
+
+		// If there's no expected idle animation for the current direction, always update
+		if (!expectedIdleAnim) {
+			return true;
+		}
+
+		return (
+			(this.direction === 'left' && !isFlipped) ||
+			(this.direction === 'right' && isFlipped) ||
+			(this.direction === 'up' && isFlipped) ||
+			(this.direction === 'down' && !isFlipped) ||
+			(currentAnim && currentAnim.key !== expectedIdleAnim)
+		);
 	}
 
 	updateMovement(tileWidth: number) {
@@ -318,17 +341,24 @@ export class PlayerSprite extends GameObjects.Container {
 		const animKey = this.animationMap[this.direction].idle;
 		this.playerSprite.setFlipX(['left', 'down'].includes(this.direction));
 		this.playAnimation(animKey);
+		console.log(
+			`Updated animation: direction=${this.direction}, animKey=${animKey}, flipped=${this.playerSprite.flipX}`
+		);
 	}
 
-	serverUpdate(data: { x: number; y: number; targetTileX: number; targetTileY: number }) {
+	serverUpdate(data: {
+		x: number;
+		y: number;
+		targetTileX: number;
+		targetTileY: number;
+		direction?: 'up' | 'down' | 'left' | 'right';
+	}) {
 		if (this.isLocalPlayer) return;
 
 		this.tileX = data.x;
 		this.tileY = data.y;
 		this.targetTileX = data.targetTileX;
 		this.targetTileY = data.targetTileY;
-
-		console.log(this.targetTileX, this.targetTileY, this.tileY, this.tileX);
 
 		if (this.targetTileX !== this.tileX || this.targetTileY !== this.tileY) {
 			const dx = this.targetTileX - this.tileX;

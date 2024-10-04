@@ -156,6 +156,15 @@ export class Game extends Scene {
 			}
 		});
 
+		room.onMessage('player:face', (message) => {
+			console.log('player:face', message);
+			const playerSprite = this.players.find((p) => p.name === message.name);
+
+			if (playerSprite) {
+				playerSprite.direction = message.direction;
+			}
+		});
+
 		room.onMessage('player:moved', (message) => {
 			console.log('player:moved', message);
 			const playerSprite = this.players.find((p) => p.name !== this.localPlayer?.name);
@@ -288,8 +297,6 @@ export class Game extends Scene {
 			) {
 				this.minimapCamera.scrollX -= (p.x - p.prevPosition.x) / this.minimapCamera.zoom;
 				this.minimapCamera.scrollY -= (p.y - p.prevPosition.y) / this.minimapCamera.zoom;
-
-				console.log(this.minimapCamera.scrollX, this.minimapCamera.scrollY);
 			}
 		});
 	}
@@ -517,6 +524,10 @@ export class Game extends Scene {
 					this.localPlayer.startMovement(dx, dy);
 				}
 			} else if (keyPressDuration && this.localPlayer.direction != direction) {
+				this.room.send('player:face', {
+					direction: direction
+				});
+
 				this.localPlayer.faceDirection(direction, { update: true });
 			}
 		} else {
