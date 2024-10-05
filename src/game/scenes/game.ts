@@ -10,6 +10,9 @@ import { ui } from '$lib/user-interface.svelte';
 import { connect } from '../../hooks/connect';
 import type { Client, Room } from 'colyseus.js';
 import type { State } from '../../server/room/home-room';
+import { chatbox } from '../../stores/chatStore.svelte';
+import { MapItem, ItemType, type ItemProperties } from '../entities/item';
+import { itemMenuOptions } from '$lib/context';
 
 export class Game extends Scene {
 	map!: MapRenderer; // Add the '!' to fix the initialization error
@@ -32,11 +35,26 @@ export class Game extends Scene {
 	private fixedUpdateRate: number = 1000 / 60; // Fixed update rate for 60 FPS
 	private accumulatedTime: number = 0;
 	private minimapShape!: Phaser.GameObjects.Shape;
-	private room: Room | null = null;
+	private room: Room<State> | null = null;
+	private cameraFollow: {
+		target: PlayerSprite | null;
+		roundPixels: boolean;
+		lerp: { x: number; y: number };
+		followOffset: { x: number; y: number };
+		midPoint: { x: number; y: number };
+	};
+	private items: Map<string, MapItem> = new Map();
 
 	constructor() {
 		super('Game');
 		this.client = connect();
+		this.cameraFollow = {
+			target: null,
+			roundPixels: false,
+			lerp: { x: 0, y: 0 },
+			followOffset: { x: 0, y: 0 },
+			midPoint: { x: 0, y: 0 }
+		};
 	}
 
 	create() {
@@ -56,10 +74,10 @@ export class Game extends Scene {
 
 		const startPos = this.map.layer.getTileAt(centerTileX, centerTileY);
 
-		this.localPlayer = this.createPlayer(centerTileX, centerTileY, '');
+		this.localPlayer = this.createPlayer(centerTileX, centerTileY, '', '0');
 
 		this.cameras.main.setZoom(1);
-		this.cameras.main.startFollow(this.localPlayer, false, 1, 1);
+		//this.cameras.main.startFollow(this.localPlayer, false, 1, 1);
 		this.cameras.main.setRoundPixels(true);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
 
@@ -89,38 +107,78 @@ export class Game extends Scene {
 		this.addMinimap();
 
 		this.connect();
+
+		this.customStartFollow(this.localPlayer!, false, 1, 1);
+
+		// Add event listener for item pickup
+		EventBus.on('item:pickup', this.handleItemPickup, this);
+		EventBus.on('item:drop', this.dropItem, this);
+
+		// Add this line after creating the map
+		this.map.on('itemclick', this.handleItemClick, this);
+	}
+
+	handleItemDrop(itemId: string, tileX: number, tileY: number) {
+		// Always create a new item, regardless of whether it already exists
+		this.createItem(itemId, tileX, tileY);
+	}
+
+	createItem(itemId: string, tileX: number, tileY: number) {
+		const itemProperties: ItemProperties = {
+			name: 'Teddy',
+			description: 'A cute teddy bear',
+			type: ItemType.KEY_ITEM,
+			sprite: `${itemId.split('_')[0]}`,
+			value: 50
+		};
+
+		const { x, y } = this.map.getTilePosition(tileX, tileY);
+		const item = new MapItem(this, x, y, itemProperties.sprite, itemProperties, itemId, this.map);
+		item.setDepth(y + this.map.tileHeight / 2);
+		item.tileX = tileX;
+		item.tileY = tileY;
+		this.items.set(itemId, item);
+		this.map.addEntity(item, tileX, tileY);
+	}
+
+	dropItem(itemId: string, tileX: number, tileY: number) {
+		// This method is called when the local player wants to drop an item
+		if (this.room) {
+			this.room.send('item:drop', { itemId, tileX, tileY });
+		}
 	}
 
 	addClientHandlers(room: Room<State>) {
 		room.state.players.onAdd((player, key) => {
-			console.log('player added', player);
+			console.log('player added', player, 'with key', key);
 			if (key === room.sessionId) {
 				// This is the local player
 				if (!this.localPlayer) {
 					this.localPlayer = this.createPlayer(
 						player.x,
 						player.y,
-						`Player ${room.sessionId.substr(0, 4)}`
+						`Player ${key.substr(0, 4)}`,
+						key
 					);
 					this.localPlayer.isLocalPlayer = true;
-					this.cameras.main.startFollow(this.localPlayer, false, 1, 1);
-					this.minimapCamera.startFollow(this.localPlayer);
 				} else {
-					this.localPlayer.usernameText.setText(`Player ${room.sessionId.substr(0, 4)}`);
+					this.localPlayer.playerId = key;
+					this.localPlayer.name = `Player ${key.substr(0, 4)}`;
+					this.localPlayer.usernameText.setText(this.localPlayer.name);
 				}
 			} else {
 				// This is a remote player
-				if (!this.players.find((p) => p.name === player.name)) {
-					this.createPlayer(player.x, player.y, player.name);
+				if (!this.players.find((p) => p.playerId === key)) {
+					this.createPlayer(player.x, player.y, `Player ${key.substr(0, 4)}`, key);
 				} else {
-					console.log('already exists');
+					console.log('Player already exists:', key);
 				}
 			}
 		});
 
 		room.state.players.onChange((player, key) => {
 			if (player) {
-				const playerSprite = this.players.find((p) => p && p.name === player.name);
+				const playerSprite = this.players.find((p) => p && p.playerId === key);
 				if (playerSprite && !playerSprite.isLocalPlayer) {
 					playerSprite.serverUpdate(player);
 				}
@@ -128,23 +186,16 @@ export class Game extends Scene {
 		});
 
 		room.state.players.onRemove((player, key) => {
-			const playerIndex = this.players.findIndex((p) => p.name === player.name);
+			const playerIndex = this.players.findIndex((p) => p.playerId === key);
 			if (playerIndex !== -1) {
 				const removedPlayer = this.players.splice(playerIndex, 1)[0];
 				removedPlayer.destroy();
 			}
 		});
 
-		room.onMessage('player:joined', (message) => {
-			console.log('player:joined', message);
-			if (message.sessionId !== room.sessionId) {
-				this.createPlayer(message.x, message.y, message.name);
-			}
-		});
-
 		room.onMessage('player:move', (message) => {
 			console.log('player:move', message);
-			const playerSprite = this.players.find((p) => p.name === message.name);
+			const playerSprite = this.players.find((p) => p.playerId === message.sessionId);
 			if (playerSprite) {
 				playerSprite.startMovement(message.dx, message.dy);
 				playerSprite.serverUpdate({
@@ -158,7 +209,7 @@ export class Game extends Scene {
 
 		room.onMessage('player:face', (message) => {
 			console.log('player:face', message);
-			const playerSprite = this.players.find((p) => p.name === message.name);
+			const playerSprite = this.players.find((p) => p.playerId === message.sessionId);
 
 			if (playerSprite) {
 				playerSprite.direction = message.direction;
@@ -167,7 +218,7 @@ export class Game extends Scene {
 
 		room.onMessage('player:moved', (message) => {
 			console.log('player:moved', message);
-			const playerSprite = this.players.find((p) => p.name !== this.localPlayer?.name);
+			const playerSprite = this.players.find((p) => p.playerId === message.sessionId);
 			if (playerSprite) {
 				playerSprite.serverUpdate({
 					x: message.x,
@@ -184,11 +235,42 @@ export class Game extends Scene {
 
 		room.onMessage('player:reconnected', (message) => {
 			console.log('player:reconnected', message);
-			const playerSprite = this.players.find((p) => p.name === message.sessionId);
+			const playerSprite = this.players.find((p) => p.playerId === message.sessionId);
 			if (playerSprite) {
 				// Restore the player's appearance
 				playerSprite.setAlpha(1);
 			}
+		});
+
+		room.onMessage('chat', (message) => {
+			console.log('Received chat message:', message);
+			const { playerId, message: chatMessage } = message;
+			const playerSprite = this.players.find((p) => p.playerId === playerId);
+			if (playerSprite) {
+				chatbox.addMessage({
+					sender: playerSprite.name,
+					content: chatMessage,
+					timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+				});
+				console.log(`Showing chat bubble for player ${playerId}`);
+				playerSprite.showChatBubble(chatMessage);
+			} else {
+				console.log(`Could not find player sprite for ${playerId}`);
+			}
+		});
+
+		room.onMessage('item:remove', (message: { itemId: string }) => {
+			const item = this.items.get(message.itemId);
+
+			if (item) {
+				item.destroy();
+				this.items.delete(message.itemId);
+			}
+		});
+
+		room.onMessage('item:drop', (message: { itemId: string; tileX: number; tileY: number }) => {
+			this.handleItemDrop(message.itemId, message.tileX, message.tileY);
+			console.log('item:drop', message);
 		});
 	}
 
@@ -326,7 +408,7 @@ export class Game extends Scene {
 		return npc;
 	}
 
-	createPlayer(tileX: number, tileY: number, name: string) {
+	createPlayer(tileX: number, tileY: number, name: string, sessionId: string = '') {
 		const { x, y } = this.map.getTilePosition(tileX, tileY);
 		const player = new PlayerSprite(this, 0, 0, name, this.map.tileHeight);
 
@@ -337,10 +419,10 @@ export class Game extends Scene {
 
 		player.setImmediatePosition(tileX, tileY);
 		player.setDepth(y + this.map.tileHeight / 2);
+		player.playerId = sessionId;
 
-		console.log(
-			`Created player ${name} at tile (${tileX}, ${tileY}), pixel (${x}, ${y - this.map.tileHeight / 2})`
-		);
+		player.name = name;
+		console.log(`Created player ${name} with ID ${sessionId} at tile (${tileX}, ${tileY})`);
 
 		return player;
 	}
@@ -352,14 +434,13 @@ export class Game extends Scene {
 			this.accumulatedTime -= this.fixedUpdateRate;
 
 			if (this.inputEnabled && this.localPlayer) {
-				this.handlePlayerInput(time * 1);
+				this.handlePlayerInput(time);
 			}
 
-			this.players.forEach((player) => player.update());
+			this.players.forEach((player) => player.update(this.fixedUpdateRate));
 
 			if (this.localPlayer) {
 				if (this.localPlayer.isMoving) {
-					// Check if the player has reached their immediate destination
 					if (
 						this.localPlayer.tileX === this.localPlayer.targetTileX &&
 						this.localPlayer.tileY === this.localPlayer.targetTileY
@@ -373,6 +454,8 @@ export class Game extends Scene {
 
 			this.npcs.forEach((npc) => npc.update());
 		}
+
+		this.updateCameraFollow();
 	}
 
 	handleInteractableClick = ({ npc, tile }: { npc: NPC; tile: { x: number; y: number } }) => {
@@ -450,11 +533,12 @@ export class Game extends Scene {
 			this.localPlayer.startMovement(dx, dy);
 			this.currentPath.shift();
 		} else {
-			if (
+			const navigationEndCursor =
 				this.map.activeTile &&
-				this.map.activeTile.x === this.localPlayer.tileX &&
-				this.map.activeTile.y === this.localPlayer.tileY
-			) {
+				Math.abs(this.map.activeTile.x - this.localPlayer.tileX) <= 1 &&
+				Math.abs(this.map.activeTile.y - this.localPlayer.tileY) <= 1;
+
+			if (navigationEndCursor) {
 				this.room?.send('player:move', {
 					x: this.localPlayer.tileX,
 					y: this.localPlayer.tileY,
@@ -468,6 +552,7 @@ export class Game extends Scene {
 
 	// Add this new method to recalculate the path
 	recalculatePath() {
+		console.log('huh');
 		if (this.currentPath.length > 0 && this.localPlayer) {
 			const endTile = this.currentPath[this.currentPath.length - 1];
 			this.setNewDestination(endTile);
@@ -521,6 +606,7 @@ export class Game extends Scene {
 						targetTileX: targetTileX,
 						targetTileY: targetTileY
 					});
+
 					this.localPlayer.startMovement(dx, dy);
 				}
 			} else if (keyPressDuration && this.localPlayer.direction != direction) {
@@ -537,7 +623,16 @@ export class Game extends Scene {
 	}
 
 	sendMessage(message: string) {
-		this.localPlayer!.showChatBubble(message);
+		if (this.localPlayer && this.room) {
+			console.log(`Sending chat message: ${message}`);
+			chatbox.addMessage({
+				sender: this.localPlayer.name,
+				content: message,
+				timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+			});
+			this.localPlayer.showChatBubble(message);
+			this.room.send('chat', message);
+		}
 	}
 
 	changeScene() {
@@ -567,4 +662,152 @@ export class Game extends Scene {
 			}
 		}
 	}
+
+	private isMobile(): boolean {
+		return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+			navigator.userAgent
+		);
+	}
+
+	private isLandscape(): boolean {
+		if (this.isMobile()) {
+			return window.orientation === 90 || window.orientation === -90;
+		} else {
+			return false;
+		}
+	}
+
+	customStartFollow(
+		target: PlayerSprite,
+		roundPixels = false,
+		lerpX = 1,
+		lerpY = lerpX,
+		offsetX = 0,
+		offsetY = offsetX
+	) {
+		this.cameraFollow.target = target;
+		this.cameraFollow.roundPixels = roundPixels;
+
+		this.cameraFollow.lerp.x = Phaser.Math.Clamp(lerpX, 0, 1);
+		this.cameraFollow.lerp.y = Phaser.Math.Clamp(lerpY, 0, 1);
+
+		// Adjust offset based on orientation
+		if (this.isLandscape()) {
+			offsetY = -window.innerHeight * 0.25; // Adjust this value as needed
+		} else {
+			offsetY = offsetY;
+		}
+
+		this.cameraFollow.followOffset.x = offsetX;
+		this.cameraFollow.followOffset.y = offsetY;
+
+		const originX = this.cameras.main.width / 2;
+		const originY = this.cameras.main.height / 2;
+
+		const fx = target.x - offsetX;
+		const fy = target.y - offsetY;
+
+		this.cameraFollow.midPoint.x = fx;
+		this.cameraFollow.midPoint.y = fy;
+
+		this.cameras.main.scrollX = fx - originX;
+		this.cameras.main.scrollY = fy - originY;
+	}
+
+	updateCameraFollow() {
+		if (!this.cameraFollow.target) return;
+
+		const camera = this.cameras.main;
+		const target = this.cameraFollow.target;
+
+		const originX = camera.width / 2;
+		const originY = camera.height / 2;
+
+		// Recalculate offsetY in case of orientation change
+		if (this.isLandscape()) {
+			this.cameraFollow.followOffset.y = -window.innerHeight * 0.25; // Adjust this value as needed
+		} else {
+			this.cameraFollow.followOffset.y = 0; // Reset for portrait mode
+		}
+
+		const fx = target.x - this.cameraFollow.followOffset.x;
+		const fy = target.y - this.cameraFollow.followOffset.y;
+
+		this.cameraFollow.midPoint.x = Phaser.Math.Linear(
+			this.cameraFollow.midPoint.x,
+			fx,
+			this.cameraFollow.lerp.x
+		);
+		this.cameraFollow.midPoint.y = Phaser.Math.Linear(
+			this.cameraFollow.midPoint.y,
+			fy,
+			this.cameraFollow.lerp.y
+		);
+
+		camera.scrollX = this.cameraFollow.midPoint.x - originX;
+		camera.scrollY = this.cameraFollow.midPoint.y - originY;
+
+		if (camera.useBounds) {
+			camera.scrollX = camera.clampX(camera.scrollX);
+			camera.scrollY = camera.clampY(camera.scrollY);
+		}
+
+		if (this.cameraFollow.roundPixels) {
+			camera.scrollX = Math.round(camera.scrollX);
+			camera.scrollY = Math.round(camera.scrollY);
+		}
+	}
+
+	handleItemPickup = ({ itemId }: { itemId: string }) => {
+		const item = this.items.get(itemId);
+		if (!item) {
+			console.log('Item not found:', itemId);
+			return;
+		}
+
+		if (!this.localPlayer) {
+			console.log('Local player not found, cannot pick up item');
+			return;
+		}
+
+		const distance = Phaser.Math.Distance.Between(
+			this.localPlayer.x,
+			this.localPlayer.y,
+			item.x,
+			item.y
+		);
+
+		if (distance > this.map.tileWidth * 2) {
+			console.log('Item is too far away to pick up');
+			return;
+		}
+
+		console.log('Sending item pickup request to server');
+		if (this.room) {
+			this.room.send('item:pickup', { itemId });
+		}
+	};
+
+	handleItemClick = (item: MapItem) => {
+		console.log('Item clicked:', item);
+
+		if (this.contextMenu) {
+			this.contextMenu.setVisible(false);
+		}
+
+		// Update the context menu state for the item
+		// ui.handleContextAction('open', {
+		// 	name: item.properties.name,
+		// 	open: true,
+		// 	identifier: item.properties.sprite,
+		// 	options: itemMenuOptions,
+		// 	isItem: true,
+		// 	itemId: item.itemId
+		// });
+
+		// // Position the context menu near the item
+		// const screenPosition = this.cameras.main.worldToScreen(item.x, item.y);
+		// ui.contextMenu.style.left = `${screenPosition.x}px`;
+		// ui.contextMenu.style.top = `${screenPosition.y}px`;
+	};
 }

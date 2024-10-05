@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { Game as GameScene } from '../scenes/game';
-import type { NPC } from '../entities/npc';
-import type { PlayerSprite } from '../entities/player-sprite';
+import { NPC } from '../entities/npc';
+import { PlayerSprite } from '../entities/player-sprite';
+import { Item, type MapItem } from '../entities/item';
 
 export class MapRenderer extends Phaser.GameObjects.Container {
 	tileWidth: number = 64;
@@ -77,8 +78,9 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		this.scene.input.on('pointerdown', this.onSceneClick, this);
 	}
 
-	addEntity(entity: NPC | PlayerSprite, x: number, y: number) {
+	addEntity(entity: NPC | PlayerSprite | MapItem, x: number, y: number) {
 		this.interactables[x][y] = entity;
+		this.walkableTiles[x][y] = false;
 	}
 
 	load(): void {
@@ -98,15 +100,56 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		this.mapHeight = this.map.height;
 	}
 
+	findClosestEmptyTile(startX: number, startY: number): { x: number; y: number } | null {
+		const maxDistance = 10; // Maximum search distance
+		const directions = [
+			{ dx: 0, dy: -1 }, // Up
+			{ dx: 1, dy: 0 }, // Right
+			{ dx: 0, dy: 1 }, // Down
+			{ dx: -1, dy: 0 } // Left
+		];
+
+		for (let distance = 1; distance <= maxDistance; distance++) {
+			for (const { dx, dy } of directions) {
+				const x = startX + dx * distance;
+				const y = startY + dy * distance;
+
+				if (this.isValidTile(x, y) && !this.interactables[x][y]) {
+					return { x, y };
+				}
+			}
+		}
+
+		return null; // No empty tile found within the search radius
+	}
+
 	onSceneClick(pointer: Phaser.Input.Pointer) {
 		const worldPoint = pointer.positionToCamera(this.scene.cameras.main) as Phaser.Math.Vector2;
-		const tile = this.layer.getIsoTileAtWorldXY(worldPoint.x, worldPoint.y);
+		let tile = this.layer.getIsoTileAtWorldXY(worldPoint.x, worldPoint.y);
 
 		if (!tile) return;
 
+		let targetTile = tile;
+
+		// if (this.interactables[tile.x][tile.y]) {
+		// 	// Find the closest tile without an interactable
+		// 	const closestEmptyTile = this.findClosestEmptyTile(tile.x, tile.y);
+
+		// 	if (closestEmptyTile) {
+		// 		// Emit the tileclick event with the closest empty tile
+		// 		tile = this.layer.getTileAt(closestEmptyTile.x, closestEmptyTile.y);
+		// 	} else {
+		// 		console.log('No empty tiles found nearby');
+		// 	}
+		// }
+
 		if (pointer.rightButtonDown()) {
-			if (this.interactables[tile.x][tile.y]) {
-				this.emit('contextmenu', this.interactables[tile.x][tile.y]);
+			if (
+				this.interactables[targetTile.x][targetTile.y] &&
+				(this.interactables[targetTile.x][targetTile.y] instanceof NPC ||
+					this.interactables[targetTile.x][targetTile.y] instanceof PlayerSprite)
+			) {
+				this.emit('contextmenu', this.interactables[targetTile.x][targetTile.y]);
 			}
 
 			return;
@@ -115,6 +158,7 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		if (this.scene.cameras.getCamerasBelowPointer(pointer).length > 1) {
 			return;
 		}
+
 		console.log('Clicked world position:', worldPoint.x, worldPoint.y);
 		console.log('Calculated tile:', tile);
 
@@ -127,10 +171,18 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 			});
 		}
 
-		this.activeTile = tile;
+		this.activeTile = targetTile;
 		this.activeTile.setAlpha(0.7);
 
-		if (this.isValidTile(tile.x, tile.y)) {
+		const localPlayerTile = { x: this.scene.localPlayer.tileX, y: this.scene.localPlayer.tileY };
+		const distance = Phaser.Math.Distance.Between(
+			localPlayerTile.x,
+			localPlayerTile.y,
+			tile.x,
+			tile.y
+		);
+
+		if (this.isValidTile(tile.x, tile.y) && distance >= 1) {
 			this.emit('tileclick', tile);
 		} else {
 			console.log('Invalid tile clicked');
@@ -141,9 +193,8 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 		const cloned = Phaser.Utils.Objects.Clone(this.layer);
 
 		this.scene.minimapCamera.ignore(this.layer);
+		// @ts-ignore
 		this.scene.minimapObjectLayer.add(cloned);
-
-		this.drawIsometricGrid();
 	}
 
 	worldToTileXY(worldX: number, worldY: number): { x: number; y: number } {
@@ -175,9 +226,10 @@ export class MapRenderer extends Phaser.GameObjects.Container {
 
 	findPath(startX: number, startY: number, endX: number, endY: number): { x: number; y: number }[] {
 		console.log('Finding path from', startX, startY, 'to', endX, endY);
-		const openSet: { x: number; y: number; f: number; g: number; h: number; parent: any }[] = [];
+		type Node = { x: number; y: number; f: number; g: number; h: number; parent: Node | null };
+		const openSet: Node[] = [];
 		const closedSet: { [key: string]: boolean } = {};
-		const start = { x: startX, y: startY, f: 0, g: 0, h: 0, parent: null };
+		const start: Node = { x: startX, y: startY, f: 0, g: 0, h: 0, parent: null };
 		const end = { x: endX, y: endY };
 
 		openSet.push(start);

@@ -48,6 +48,7 @@ export default class Preloader extends Scene {
 		this.load.image('pixel', 'pixel.png');
 		this.load.image('player-icon', 'player-icon.png');
 		this.load.image('quest-icon', 'quest-icon.png');
+		this.load.image('teddy', 'teddy_floor.png');
 
 		this.load.spritesheet('fighter', 'fighter.png', { frameWidth: 32, frameHeight: 32 });
 		this.load.spritesheet('player', 'template-front-all.png', { frameWidth: 32, frameHeight: 32 });

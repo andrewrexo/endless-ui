@@ -2,7 +2,6 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'colyseus';
 import { HomeRoom } from './room/home-room';
-import { WebSocketTransport } from '@colyseus/ws-transport';
 import { BunWebSockets } from '@colyseus/bun-websockets';
 
 const app = express();
