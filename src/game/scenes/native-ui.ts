@@ -6,6 +6,7 @@ import { ui } from '$lib/user-interface.svelte';
 import type { NPC } from '../entities/npc';
 import type { PlayerSprite } from '../entities/player-sprite';
 import type { Game } from './game';
+import { MapItem } from '../entities/item';
 
 export class NativeUI extends Phaser.Scene {
 	chatBox!: PixelArtBox;
@@ -26,13 +27,21 @@ export class NativeUI extends Phaser.Scene {
 	}
 
 	handleContextMenu = (object: NPC | PlayerSprite) => {
-		if ((this.game.scene.getScene('Game') as Game)!.player === object) {
+		if ((this.game.scene.getScene('Game') as Game)!.localPlayer === object) {
 			// don't need to show context menu for own player
 			return;
 		}
 
+		console.log(object);
+
+		let name = object.name;
+
+		if (object instanceof MapItem) {
+			name = object.properties.name;
+		}
+
 		ui.handleContextAction('open', {
-			name: object.name
+			name: name
 		});
 
 		if (ui.contextMenu) {

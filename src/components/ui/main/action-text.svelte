@@ -6,6 +6,7 @@
 	import UserOptions from '../../icons/user-options.svelte';
 	import Users from '../../icons/users.svelte';
 	import Chat from '../../icons/chat.svelte';
+	import Bag from '../../icons/bag.svelte';
 
 	interface ActionText {
 		action: string;
@@ -17,23 +18,24 @@
 		['Menu', Forward],
 		['View equipment', UserOptions],
 		['Add as friend', Users],
-		['Send message', Chat]
+		['Send message', Chat],
+		['Pick-up', Bag]
 	]);
 </script>
 
 <div
-	class="min-w-[150px] self-start pointer-events-auto h-2 flex flex-row gap-2 items-center text-slate-300"
+	class="pointer-events-auto flex h-2 min-w-[150px] flex-row items-center gap-2 self-start text-slate-300"
 >
 	{#if action.actionName}
-		<span class="h-6 mt-[1px]">
+		<span class="mt-[1px] h-6">
 			{@render actionIconSet.get(action.actionName)({ size: 16 })}
 		</span>
-		<div class="pointer-events-none action-text text-slate-300 flex gap-1">
+		<div class="action-text pointer-events-none flex gap-1 text-slate-300">
 			{action.actionName}
-			<span class="text-primary text-md font-medium">{action.actionDescription}</span>
+			<span class="text-md font-medium text-primary">{action.actionDescription}</span>
 		</div>
 	{:else}
-		<span class="h-6 mt-[1px]">
+		<span class="mt-[1px] h-6">
 			<Forward />
 		</span>
 		<span class="action-text">shrube</span>

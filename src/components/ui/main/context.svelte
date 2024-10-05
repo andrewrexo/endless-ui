@@ -2,9 +2,16 @@
 	import { ui, type MenuOption } from '../../../lib/user-interface.svelte';
 	import { action } from './action.svelte';
 	import { EventBus } from '../../../game/event-bus';
-	import { menuOptions } from '$lib/context';
+	import { menuOptions, itemMenuOptions } from '$lib/context';
 
-	let menuHeight = menuOptions.length * 26;
+	let currentMenuOptions: MenuOption[];
+
+	$: {
+		currentMenuOptions = ui.contextMenuState.isItem ? itemMenuOptions : menuOptions;
+		menuHeight = currentMenuOptions.length * 26;
+	}
+
+	let menuHeight: number;
 
 	let onOptionClick = () => {
 		ui.handleContextAction('close');
@@ -13,7 +20,11 @@
 
 	const onOptionMouseDown = (option: MenuOption) => {
 		onOptionClick();
-		option.callback();
+		if (ui.contextMenuState.isItem && ui.contextMenuState.itemId) {
+			option.callback(ui.contextMenuState.itemId);
+		} else {
+			option.callback();
+		}
 	};
 
 	const updateAction = (option: string) => {
@@ -35,9 +46,12 @@
 	{#if ui.contextMenuState.open}
 		<div class="flex w-full justify-between p-1">
 			<span class="text-sm uppercase">{ui.contextMenuState.name ?? ''}</span>
-			<span class="flex text-xs font-bold text-primary"><ui.contextMenuState.identifier /> 99</span>
+			<span class="flex text-xs font-bold text-primary">
+				<svelte:component this={ui.contextMenuState.identifier} />
+				{ui.contextMenuState.isItem ? '' : '99'}
+			</span>
 		</div>
-		{#each menuOptions as o}
+		{#each currentMenuOptions as o}
 			<button
 				onmouseover={() => {
 					updateAction(o.option);

@@ -23,13 +23,12 @@
 
 	let pressedKeys = $state(new Set<string>());
 
+	let windowHeight = $state(0);
+	let windowWidth = $state(0);
+	let isLandscapeMobile = $state(false);
+
 	const sendMessage = () => {
 		EventBus.emit('chatbox:send', chatboxText);
-		chatbox.addMessage({
-			sender: 'shrube',
-			content: chatboxText,
-			timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-		});
 		chatboxText = '';
 		chatboxInput?.blur();
 	};
@@ -85,6 +84,46 @@
 		}
 	};
 
+	const checkLandscapeMobile = () => {
+		const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+			navigator.userAgent
+		);
+		isLandscapeMobile = isMobileDevice && window.innerWidth > window.innerHeight;
+	};
+
+	const adjustUIPositions = () => {
+		if (isLandscapeMobile) {
+			ui.handleButtonAction('debug', 'close');
+			ui.componentPositions = ui.componentPositions.map((component) => {
+				switch (component.id) {
+					case 'chat':
+						return { ...component, y: windowHeight - 220 };
+					case 'inventory':
+						return { ...component, y: windowHeight - 220 };
+					case 'debug':
+						return { ...component, y: 10 };
+					case 'tasks':
+						return { ...component, y: 50 };
+					case 'status':
+						return { ...component, y: 10, x: 10 };
+					default:
+						return component;
+				}
+			});
+		} else {
+			// Reset to default positions when not in landscape mobile mode
+			ui.componentPositions = [
+				{ id: 'chat', x: 10, y: 382 },
+				{ id: 'context', x: 0, y: 0 },
+				{ id: 'inventory', x: 647, y: 382 },
+				{ id: 'debug', title: 'Debug', x: 15, y: 45 },
+				{ id: 'minimap', x: 590, y: 45 },
+				{ id: 'tasks', title: 'Tasks', x: 604, y: 46 },
+				{ id: 'status', x: 10, y: 10 }
+			];
+		}
+	};
+
 	onMount(() => {
 		const showUi = setTimeout(() => {
 			ui.handleButtonAction('chat', 'open');
@@ -94,8 +133,31 @@
 			ui.handleButtonAction('tasks', 'open');
 		}, 2000);
 
+		// Check if the device is mobile
+		isLandscapeMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+			navigator.userAgent
+		);
+
+		// Set initial window dimensions and check for landscape mobile
+		windowHeight = window.innerHeight;
+		windowWidth = window.innerWidth;
+		checkLandscapeMobile();
+
+		// Update window dimensions and check landscape mobile on resize
+		const handleResize = () => {
+			windowHeight = window.innerHeight;
+			windowWidth = window.innerWidth;
+			checkLandscapeMobile();
+			adjustUIPositions();
+		};
+
+		window.addEventListener('resize', handleResize);
+		window.addEventListener('orientationchange', handleResize);
+
 		return () => {
 			clearTimeout(showUi);
+			window.removeEventListener('resize', handleResize);
+			window.removeEventListener('orientationchange', handleResize);
 		};
 	});
 </script>
@@ -109,7 +171,10 @@
 />
 
 <div
-	class="pointer-events-none absolute flex h-full w-full select-none flex-col items-center justify-between"
+	class="pointer-events-none absolute flex select-none flex-col items-center justify-between"
+	style={isLandscapeMobile
+		? `height: ${windowHeight}px; width: 100%`
+		: 'height: 100%; width: 100%;'}
 >
 	{#if ui.interfaces.status}
 		<Status />
@@ -138,7 +203,10 @@
 	<Shop />
 	<Settings />
 
-	<div class="mt-auto w-full p-2">
+	<div
+		class="mt-auto w-full p-2"
+		style={isLandscapeMobile ? `margin-bottom: env(safe-area-inset-bottom);` : ''}
+	>
 		<span
 			class="pointer-events-auto flex w-full items-center gap-2 rounded-lg bg-base-200/90 py-2 pl-4 pr-2 text-lg"
 		>
@@ -176,5 +244,22 @@
 		font-size: 14px;
 
 		@apply text-slate-300;
+	}
+
+	/* Add styles for mobile panels */
+	@media (max-width: 768px) {
+		:global(.panel) {
+			max-height: calc(100vh - 120px); /* Adjust this value as needed */
+			overflow-y: auto;
+		}
+	}
+
+	/* Adjust styles for landscape mobile panels */
+	@media (max-width: 1024px) and (orientation: landscape) {
+		:global(.panel) {
+			max-height: calc(100vh - 60px); /* Reduced from 80px */
+			max-width: 25%; /* Reduced from 30% */
+			overflow-y: auto;
+		}
 	}
 </style>

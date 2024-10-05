@@ -1,59 +1,51 @@
 import { ui } from '$lib/user-interface.svelte';
 
-function dragAction(node: HTMLElement, componentId: string) {
-	let startX: number;
-	let startY: number;
+export function draggable(node: HTMLElement) {
 	let isDragging = false;
+	let startX: number, startY: number;
+	let originalX: number, originalY: number;
 
 	function handleMouseDown(event: MouseEvent) {
-		// @ts-ignore
-		if (event.target && event.target.id.includes('inventory-item')) {
-			return;
-		}
-
 		isDragging = true;
+		startX = event.clientX;
+		startY = event.clientY;
+		originalX = node.offsetLeft;
+		originalY = node.offsetTop;
 
-		const component = ui.componentPositions.find((c) => c.id === componentId);
-
-		if (component) {
-			startX = event.clientX - component.x;
-			startY = event.clientY - component.y;
-		}
-
-		event.preventDefault();
+		// Add event listeners only when starting to drag
+		document.addEventListener('mousemove', handleMouseMove);
+		document.addEventListener('mouseup', handleMouseUp);
 	}
 
 	function handleMouseMove(event: MouseEvent) {
-		node.style.cursor = 'grab';
-
 		if (!isDragging) return;
 
-		const index = ui.componentPositions.findIndex((c) => c.id === componentId);
+		const dx = event.clientX - startX;
+		const dy = event.clientY - startY;
 
-		if (index !== -1) {
-			ui.updateComponentPosition(index, {
-				x: event.clientX - startX,
-				y: event.clientY - startY
-			});
-		}
+		node.style.left = `${originalX + dx}px`;
+		node.style.top = `${originalY + dy}px`;
 	}
 
 	function handleMouseUp() {
 		isDragging = false;
-		node.style.cursor = 'grab';
+
+		// Remove event listeners when not dragging
+		document.removeEventListener('mousemove', handleMouseMove);
+		document.removeEventListener('mouseup', handleMouseUp);
 	}
 
+	// Only add the mousedown event listener to the node
 	node.addEventListener('mousedown', handleMouseDown);
-	window.addEventListener('mousemove', handleMouseMove);
-	window.addEventListener('mouseup', handleMouseUp);
 
 	return {
 		destroy() {
+			// Clean up event listeners
 			node.removeEventListener('mousedown', handleMouseDown);
-			window.removeEventListener('mousemove', handleMouseMove);
-			window.removeEventListener('mouseup', handleMouseUp);
+			document.removeEventListener('mousemove', handleMouseMove);
+			document.removeEventListener('mouseup', handleMouseUp);
 		}
 	};
 }
 
-export default dragAction;
+export default draggable;
