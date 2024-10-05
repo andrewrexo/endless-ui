@@ -2,4 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Add any other global styles here */
+body {
+	margin: 0;
+	padding: 0;
+}
+
+:root:has(:is(.modal-open, .modal:target, .modal-toggle:checked + .modal, .modal[open])) {
+	scrollbar-gutter: unset;
+}
+
+@keyframes pulse-glow {
+	0%,
+	100% {
+		opacity: 1;
+		box-shadow: 0 0 2px oklch(var(--p));
+		@apply scale-100;
+	}
+	50% {
+		opacity: 1;
+		box-shadow: 0 0 10px oklch(var(--p));
+		@apply scale-110;
+	}
+}
+
+@keyframes hover-glow {
+	0% {
+		opacity: 1;
+		box-shadow: 0 0 10px oklch(var(--p));
+		@apply scale-110 text-primary/80;
+	}
+	100% {
+		opacity: 1;
+		box-shadow: 0 0 15px oklch(var(--p));
+		@apply scale-100 text-primary;
+	}
+}
+
+@layer base {
+	.basic-button {
+		font-family: 'Abaddon';
+	}
+
+	.pulse-glow {
+		animation: pulse-glow 2s ease-in-out infinite;
+		animation-direction: alternate;
+		transition: all 0.5s ease-out;
+	}
+
+	.pulse-glow:hover {
+		animation: hover-glow 0.5s ease-in-out forwards;
+	}
+
+	.pulse-glow:not(:hover) {
+		transition: all 1s ease-out;
+	}
+
+	.animate-spin-active {
+		transition:
+			transform 0.3s ease,
+			opacity 0.3s ease;
+		opacity: 0.7;
+	}
+
+	.animate-spin-active:hover {
+		transform: rotate(90deg);
+		opacity: 1;
+	}
+
+	.animate-spin-active:focus {
+		outline: none;
+		box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+	}
+}

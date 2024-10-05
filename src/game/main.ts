@@ -1,45 +1,36 @@
 import { Boot } from './scenes/boot';
 import { Game as GameScene } from './scenes/game';
-import { MainMenu } from './scenes/main-menu';
-import { AUTO, CANVAS, Game, WEBGL } from 'phaser';
+import { WEBGL } from 'phaser';
 import Preloader from './scenes/preloader';
 import { NativeUI } from './scenes/native-ui';
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config: Phaser.Types.Core.GameConfig = {
-	type: AUTO,
+	type: WEBGL,
 	width: 800,
 	height: 600,
-	parent: 'game-container',
+	parent: 'app',
 	scale: {
 		width: 800,
 		height: 600,
-		parent: 'game-container'
+		autoCenter: Phaser.Scale.CENTER_BOTH,
+		autoRound: true
 	},
-
+	dom: {
+		createContainer: true
+	},
 	zoom: 1,
+	disableContextMenu: true,
 	backgroundColor: '#000',
-	scene: [Boot, Preloader, MainMenu, GameScene, NativeUI],
+	scene: [Boot, Preloader, GameScene, NativeUI],
 	render: {
 		powerPreference: 'high-performance',
-		pixelArt: true,
-		roundPixels: true
+		pixelArt: true
 	},
 	input: {
 		windowEvents: false
-	},
-	physics: {
-		default: 'arcade',
-		arcade: {
-			gravity: { x: 0, y: 300 },
-			debug: true
-		}
 	}
 };
 
-const StartGame = (parent: string) => {
-	return new Game({ ...config, parent });
-};
-
-export default StartGame;
+export default config;

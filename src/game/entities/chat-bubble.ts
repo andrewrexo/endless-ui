@@ -8,7 +8,7 @@ export class ChatBubble extends GameObjects.Container {
 	private tailHeight: number = 4;
 
 	constructor(scene: Scene, x: number, y: number, message: string) {
-		super(scene, Math.round(x), Math.round(y));
+		super(scene, 0, Math.round(y));
 		scene.add.existing(this);
 
 		this.background = scene.add.graphics();

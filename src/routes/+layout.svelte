@@ -1,12 +1,22 @@
 <script lang="ts">
-	import '../app.css'; // Import the CSS file
+	import '../app.css';
 	let { children } = $props();
 
 	let mounted = $state(false);
 
 	$effect(() => {
 		if (mounted) return;
+	});
 
+	const loadFonts = async () => {
+		const monogram = new FontFace('Monogram', 'url(/assets/fonts/monogram.ttf)');
+		const abaddon = new FontFace('Abaddon', 'url(/assets/fonts/abaddon-bold.ttf)');
+		await Promise.all([monogram.load(), abaddon.load()]);
+		document.fonts.add(monogram);
+		document.fonts.add(abaddon);
+	};
+
+	loadFonts().then(() => {
 		mounted = true;
 	});
 </script>
@@ -26,24 +36,4 @@
 </main>
 
 <style>
-	@font-face {
-		font-family: 'Monogram';
-		font-style: normal;
-		font-weight: 500;
-		src: url('/assets/fonts/monogram.ttf');
-	}
-
-	@font-face {
-		font-family: 'Abaddon';
-		font-style: normal;
-		font-weight: 500;
-		src: url('/assets/fonts/abaddon-bold.ttf');
-	}
-
-	:global(body) {
-		background-color: #000;
-		margin: 0;
-		padding: 0;
-		font-family: 'Monogram';
-	}
 </style>

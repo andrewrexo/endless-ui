@@ -2,6 +2,7 @@ import { Scene } from 'phaser';
 
 export default class Preloader extends Scene {
 	bar!: Phaser.GameObjects.Rectangle;
+	rect!: Phaser.GameObjects.Rectangle;
 	text!: Phaser.GameObjects.Text;
 	progress: number = 0;
 
@@ -10,8 +11,7 @@ export default class Preloader extends Scene {
 	}
 
 	init(): void {
-		this.add.image(this.scale.width / 2, this.scale.height / 2, 'background-2');
-		this.add
+		this.rect = this.add
 			.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width / 2, 32)
 			.setStrokeStyle(2, 0x000000);
 		this.text = this.add
@@ -32,7 +32,10 @@ export default class Preloader extends Scene {
 		});
 
 		this.load.on('filecomplete', (file: string) => {
-			this.text.setText(`loaded ${file}. ${this.progress * 100}% complete.`);
+			this.text.setColor('#00ff00');
+			this.text.setBackgroundColor('#000000');
+			this.text.setPadding(4, 4, 4, 4);
+			this.text.setText(`loaded ${file}\n${(this.progress * 100).toFixed(2)}% complete.`);
 		});
 	}
 
@@ -43,6 +46,9 @@ export default class Preloader extends Scene {
 		this.load.image('tile', 'tile.png');
 		this.load.image('tile-hover', 'tile-hover.png');
 		this.load.image('pixel', 'pixel.png');
+		this.load.image('player-icon', 'player-icon.png');
+		this.load.image('quest-icon', 'quest-icon.png');
+		this.load.image('teddy', 'teddy_floor.png');
 
 		this.load.spritesheet('fighter', 'fighter.png', { frameWidth: 32, frameHeight: 32 });
 		this.load.spritesheet('player', 'template-front-all.png', { frameWidth: 32, frameHeight: 32 });
@@ -51,7 +57,8 @@ export default class Preloader extends Scene {
 		this.load.spritesheet('tiles', 'tiles.png', { frameWidth: 64, frameHeight: 32 });
 
 		// Load the tilemap JSON
-		this.load.tilemapTiledJSON('map-1', 'maps/1.json');
+		this.load.tilemapTiledJSON('map-1', 'map/1.json');
+		this.load.pack('objects', 'map/object-pack.json');
 	}
 
 	create(): void {
@@ -61,16 +68,16 @@ export default class Preloader extends Scene {
 		fadeRect.setAlpha(1); // Start fully opaque
 
 		this.text.setText(`loading ${this.progress * 100}% complete. sending you to the game...`);
-		this.text.setColor('#00ff00');
-		this.text.setBackgroundColor('#000000');
-		this.text.setPadding(4, 4, 4, 4);
 
 		this.scene.transition({
 			target: 'Game',
-			duration: 100,
+			duration: 200,
 			moveBelow: true,
 			onUpdate: (progress: number) => {
 				// Fade out the black rectangle
+				this.text.setAlpha(1 - progress);
+				this.bar.setAlpha(1 - progress);
+				this.rect.setAlpha(1 - progress);
 				fadeRect.setAlpha(1 - progress);
 			}
 		});

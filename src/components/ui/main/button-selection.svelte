@@ -1,21 +1,26 @@
-<script>
+<script lang="ts">
 	// @ts-nocheck
 
 	import { fly } from 'svelte/transition';
 	import { EventBus } from '../../../game/event-bus';
-	import Book from '../../icons/book.svelte';
-	import Chat from '../../icons/chat.svelte';
-	import Target from '../../icons/target.svelte';
-	import UserOptions from '../../icons/user-options.svelte';
-	import Users from '../../icons/users.svelte';
+
+	import { ui, type ButtonAction } from '../../../lib/user-interface.svelte';
+	import FluentChatMail20Filled from '~icons/fluent/chat-mail-20-filled';
+	import GisLocationMan from '~icons/gis/location-man';
+	import PhTreasureChestFill from '~icons/ph/treasure-chest-fill';
+	import FluentWrenchSettings24Filled from '~icons/fluent/wrench-settings-24-filled';
 
 	let mounted = $state(false);
 	let buttons = $state([
-		{ icon: Chat, event: 'chat-toggle' },
-		{ icon: Book },
-		{ icon: Target },
-		{ icon: UserOptions },
-		{ icon: Users }
+		{ icon: FluentChatMail20Filled, target: 'chat', action: 'toggle', hotkey: 'ctrl + c' },
+		{ icon: PhTreasureChestFill, target: 'inventory', action: 'toggle', hotkey: 'ctrl + i' },
+		{ icon: GisLocationMan, target: 'minimap', action: 'toggle', hotkey: 'ctrl + m' },
+		{
+			icon: FluentWrenchSettings24Filled,
+			target: 'settings',
+			action: 'toggle',
+			hotkey: 'ctrl + esc'
+		}
 	]);
 
 	$effect(() => {
@@ -25,38 +30,21 @@
 
 {#each buttons as button, index}
 	{#if mounted}
-		<button
-			onclick={() => {
-				if (button.event) EventBus.emit(button.event);
-			}}
-			transition:fly={{ y: -100, duration: 200, delay: index * 100 }}
-			class="icon-container"
-		>
-			{@render button.icon()}
-		</button>
+		<div class="tooltip capitalize" data-tip={button.target}>
+			<button
+				onclick={() => ui.handleButtonAction(button.target, button.action as ButtonAction)}
+				transition:fly={{ x: 100, duration: 300, delay: index * 100 + 400 }}
+				class="btn btn-sm px-2 transition-all hover:scale-105 hover:brightness-125"
+			>
+				{@render button.icon({ size: 32 })}
+			</button>
+		</div>
 	{/if}
 {/each}
 
 <style>
 	button {
-		padding: 0.5rem;
 		width: 32px;
 		height: 32px;
-		outline: none;
-		border: none;
-		font-size: 16px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: #333;
-		border: 1px solid #ccc;
-		background: #eee;
-		border-radius: 0.25rem;
-		box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.5);
-		cursor: pointer;
-	}
-
-	button:hover {
-		translate: 0 2px;
 	}
 </style>
