@@ -14,7 +14,6 @@ const config: Phaser.Types.Core.GameConfig = {
 	scale: {
 		width: 800,
 		height: 600,
-		autoCenter: Phaser.Scale.CENTER_BOTH,
 		autoRound: true
 	},
 	dom: {

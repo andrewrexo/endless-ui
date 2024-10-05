@@ -1,11 +1,11 @@
 import { GameObjects } from 'phaser';
 import { ChatBubble } from './chat-bubble';
-import { Game as GameScene } from '../scenes/game';
+import { Game, Game as GameScene } from '../scenes/game';
 
 export class PlayerSprite extends GameObjects.Container {
 	tileX: number = 0;
 	tileY: number = 0;
-	moveSpeed: number = 2; // Pixels per frame
+	moveSpeed: number = 120; // Pixels per second
 	attackCooldown: number = 600;
 	isMoving: boolean = false;
 	targetTileX: number = 0;
@@ -21,11 +21,13 @@ export class PlayerSprite extends GameObjects.Container {
 	actionDescription: string = '';
 	isHover: boolean = false;
 	mapIcon: GameObjects.Sprite;
+	playerId: string;
 	public declare scene: GameScene;
 
 	public usernameText: GameObjects.Text;
 	private playerSprite: GameObjects.Sprite;
 	private lastAttackTime: number = 0;
+	public lastMoveUpdated: boolean = false;
 	private animationMap = {
 		up: { idle: 'player-idle-rear', attack: 'player-attack-rear' },
 		down: { idle: 'player-idle-front', attack: 'player-attack-front' },
@@ -76,7 +78,7 @@ export class PlayerSprite extends GameObjects.Container {
 		this.playerSprite.on('pointerover', () => {
 			if (this.isHover) return;
 
-			this.playerSprite.postFX.addGlow(0xffffff, 4, 0.5, false, 2, 4);
+			this.playerSprite.postFX.addGlow(0x000000, 0.5, 0.5, false, 1, 4);
 			this.isHover = true;
 			this.usernameText.setVisible(true);
 			scene.updateActionText(this.action, this.actionDescription);
@@ -103,7 +105,7 @@ export class PlayerSprite extends GameObjects.Container {
 		});
 
 		this.particles.setDepth(4);
-		this.offsetY = Math.round(tileHeight / 2);
+		this.offsetY = Math.round(this.playerSprite.height / 4);
 
 		scene.add.existing(this);
 	}
@@ -137,11 +139,11 @@ export class PlayerSprite extends GameObjects.Container {
 		this.playAnimation(animKey);
 	}
 
-	update() {
+	update(delta: number) {
 		super.update();
 
 		if (this.isMoving) {
-			this.updateMovement(this.scene.map.tileWidth);
+			this.updateMovement(this.scene.map.tileWidth, delta);
 		} else {
 			if (this.needsDirectionUpdate()) {
 				this.faceDirection(this.direction, { update: true });
@@ -151,6 +153,14 @@ export class PlayerSprite extends GameObjects.Container {
 		this.setDepth(this.y + this.playerSprite.height);
 		this.mapIcon.setPosition(this.x, this.y);
 		this.usernameText.setDepth(this.y + this.playerSprite.height * 10);
+
+		if (
+			this.isMoving &&
+			Math.abs(this.tileX - this.targetTileX) < 1 &&
+			Math.abs(this.tileY - this.targetTileY) < 1
+		) {
+			this.isMoving = false;
+		}
 	}
 
 	private needsDirectionUpdate(): boolean {
@@ -172,8 +182,9 @@ export class PlayerSprite extends GameObjects.Container {
 		);
 	}
 
-	updateMovement(tileWidth: number) {
-		this.movementProgress += this.moveSpeed;
+	updateMovement(tileWidth: number, delta: number) {
+		const pixelsToMove = (this.moveSpeed * delta) / 1000; // Convert delta to seconds
+		this.movementProgress += pixelsToMove;
 
 		const startPos = this.scene.map.getTilePosition(this.tileX, this.tileY);
 		const endPos = this.scene.map.getTilePosition(this.targetTileX, this.targetTileY);
@@ -190,6 +201,7 @@ export class PlayerSprite extends GameObjects.Container {
 			this.movementProgress = 0;
 			this.isAttacking = false;
 			this.playIdleAnimation();
+
 			return true;
 		}
 
@@ -299,6 +311,7 @@ export class PlayerSprite extends GameObjects.Container {
 	}
 
 	showChatBubble(message: string) {
+		console.log(`Showing chat bubble for ${this.name}: ${message}`);
 		if (this.chatBubble) {
 			// Update existing chat bubble
 			this.chatBubble.setMessage(message);

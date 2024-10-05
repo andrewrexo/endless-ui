@@ -40,6 +40,8 @@ export interface ContextMenuState {
 	open: boolean;
 	identifier: Component;
 	options: MenuOption[];
+	isItem: boolean;
+	itemId?: string;
 }
 
 export function createUserInterface() {
@@ -59,7 +61,9 @@ export function createUserInterface() {
 		name: '',
 		open: false,
 		identifier: UserInteract,
-		options: menuOptions
+		options: menuOptions,
+		isItem: false,
+		itemId: undefined
 	});
 
 	let contextMenu: HTMLElement | null = $state(null);
@@ -187,6 +191,9 @@ export function createUserInterface() {
 		},
 		get componentPositions() {
 			return componentPositions;
+		},
+		set componentPositions(data) {
+			componentPositions = data;
 		},
 		get interfaces() {
 			return interfaces;
