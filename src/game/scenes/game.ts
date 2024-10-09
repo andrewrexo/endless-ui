@@ -472,6 +472,12 @@ export class Game extends Scene {
 	}
 
 	update(time: number, delta: number) {
+		this.accumulatedTime += delta;
+
+		if (this.accumulatedTime <= this.fixedUpdateRate) {
+			return;
+		}
+
 		this.accumulatedTime -= this.fixedUpdateRate;
 
 		if (this.inputEnabled && this.localPlayer) {
