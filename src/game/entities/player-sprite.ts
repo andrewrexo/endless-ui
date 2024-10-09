@@ -2,10 +2,10 @@ import { GameObjects } from 'phaser';
 import { ChatBubble } from './chat-bubble';
 import { Game, Game as GameScene } from '../scenes/game';
 
-export class PlayerSprite extends GameObjects.Container {
+export class PlayerSprite extends GameObjects.Sprite {
 	tileX: number = 0;
 	tileY: number = 0;
-	moveSpeed: number = 120; // Pixels per second
+	moveSpeed: number = 80; // Pixels per second
 	attackCooldown: number = 600;
 	isMoving: boolean = false;
 	targetTileX: number = 0;
@@ -25,7 +25,6 @@ export class PlayerSprite extends GameObjects.Container {
 	public declare scene: GameScene;
 
 	public usernameText: GameObjects.Text;
-	private playerSprite: GameObjects.Sprite;
 	private lastAttackTime: number = 0;
 	public lastMoveUpdated: boolean = false;
 	private animationMap = {
@@ -40,20 +39,14 @@ export class PlayerSprite extends GameObjects.Container {
 	public isLocalPlayer: boolean = false;
 
 	constructor(scene: GameScene, x: number, y: number, username: string, tileHeight: number) {
-		super(scene, 0, 0);
+		super(scene, x, y, 'mage', 1);
+		this.setOrigin(0.5);
 
 		this.name = username;
 		this.actionDescription = username;
 
-		this.playerSprite = scene.add.sprite(0, 0, this.textureKey, 1);
-		this.playerSprite.setOrigin(0.5);
-		this.add(this.playerSprite);
-		this.createAnimations();
-		this.playIdleAnimation();
-		this.playerSprite.setDepth(3);
-		// Create username text
 		this.usernameText = scene.add
-			.text(0, 0, username, {
+			.text(0, -24, username, {
 				fontSize: '16px',
 				color: '#ffffff',
 				fontFamily: 'Abaddon',
@@ -61,52 +54,35 @@ export class PlayerSprite extends GameObjects.Container {
 				strokeThickness: 2,
 				align: 'center'
 			})
-			.setVisible(false);
+			.setVisible(false)
+			.setOrigin(0.5);
 
-		this.usernameText.setPosition(0, -24);
-		this.usernameText.setOrigin(0.5);
+		this.setInteractive();
 
-		this.playerSprite.setInteractive();
-		this.add(this.usernameText);
-
-		this.mapIcon = scene.add.sprite(0, 0, 'player-icon');
+		this.mapIcon = scene.add.sprite(0, -this.height / 2 - 16 / 2, 'player-icon');
 		this.mapIcon.setOrigin(0.5);
-		this.mapIcon.setPosition(0, -this.playerSprite.height / 2 - 16 / 2); // Position above the player
 		this.mapIcon.setScale(7);
 		this.mapIcon.setTint(0xffff80);
 
-		this.playerSprite.on('pointerover', () => {
+		this.on('pointerover', () => {
 			if (this.isHover) return;
 
-			this.playerSprite.postFX.addGlow(0x000000, 0.5, 0.5, false, 1, 4);
+			this.postFX.addGlow(0x000000, 0.5, 0.5, false, 1, 4);
 			this.isHover = true;
 			this.usernameText.setVisible(true);
 			scene.updateActionText(this.action, this.actionDescription);
 		});
 
-		this.playerSprite.on('pointerout', () => {
+		this.on('pointerout', () => {
 			if (!this.isHover) return;
 
-			this.playerSprite.postFX.clear();
+			this.postFX.clear();
 			this.isHover = false;
 			this.usernameText.setVisible(false);
 			scene.updateActionText('', '');
 		});
 
-		// Create particle emitter
-		this.particles = scene.add.particles(this.playerSprite.x, this.playerSprite.y, 'pixel', {
-			lifespan: 500,
-			speed: { min: 100, max: 200 },
-			scale: { start: 1, end: 0 },
-			quantity: 20,
-			blendMode: 'ADD',
-			emitting: false,
-			tint: 0xffff00
-		});
-
-		this.particles.setDepth(4);
-		this.offsetY = Math.round(this.playerSprite.height / 4);
-
+		this.offsetY = Math.round(this.height / 4);
 		scene.add.existing(this);
 	}
 
@@ -121,27 +97,28 @@ export class PlayerSprite extends GameObjects.Container {
 		if (dx < 0) {
 			this.faceDirection('left', { update: false });
 			animKey = 'player-walk-left';
-			this.playerSprite.setFlipX(true);
+			this.setFlipX(true);
 		} else if (dx > 0) {
 			this.faceDirection('right', { update: false });
 			animKey = 'player-walk-right';
-			this.playerSprite.setFlipX(false);
+			this.setFlipX(false);
 		} else if (dy < 0) {
 			this.faceDirection('up', { update: false });
 			animKey = 'player-walk-up';
-			this.playerSprite.setFlipX(false);
+			this.setFlipX(false);
 		} else if (dy > 0) {
 			this.faceDirection('down', { update: false });
 			animKey = 'player-walk-down';
-			this.playerSprite.setFlipX(true);
+			this.setFlipX(true);
 		}
 
-		this.playAnimation(animKey);
+		// Only start the animation if it's not already playing
+		if (this.anims.currentAnim?.key !== animKey) {
+			this.play(animKey);
+		}
 	}
 
 	update(delta: number) {
-		super.update();
-
 		if (this.isMoving) {
 			this.updateMovement(this.scene.map.tileWidth, delta);
 		} else {
@@ -150,9 +127,8 @@ export class PlayerSprite extends GameObjects.Container {
 			}
 		}
 
-		this.setDepth(this.y + this.playerSprite.height);
-		this.mapIcon.setPosition(this.x, this.y);
-		this.usernameText.setDepth(this.y + this.playerSprite.height * 10);
+		this.setDepth(this.y + this.height);
+		this.updateChildrenPositions();
 
 		if (
 			this.isMoving &&
@@ -163,9 +139,22 @@ export class PlayerSprite extends GameObjects.Container {
 		}
 	}
 
+	private updateChildrenPositions() {
+		// Update positions of children
+		this.mapIcon.setPosition(this.x, this.y - this.height / 2 - 16 / 2);
+		this.usernameText.setPosition(this.x, this.y - 24);
+		this.usernameText.setDepth(100000);
+
+		if (this.chatBubble) {
+			const bubbleY = this.usernameText.visible ? -32 : -16; // Adjust Y position if username is visible
+			this.chatBubble.setPosition(this.x, this.y + bubbleY);
+			this.chatBubble.setDepth(100000);
+		}
+	}
+
 	private needsDirectionUpdate(): boolean {
-		const isFlipped = this.playerSprite.flipX;
-		const currentAnim = this.playerSprite.anims.currentAnim;
+		const isFlipped = this.flipX;
+		const currentAnim = this.anims.currentAnim;
 		const expectedIdleAnim = this.animationMap[this.direction]?.idle;
 
 		// If there's no expected idle animation for the current direction, always update
@@ -183,18 +172,27 @@ export class PlayerSprite extends GameObjects.Container {
 	}
 
 	updateMovement(tileWidth: number, delta: number) {
-		const pixelsToMove = (this.moveSpeed * delta) / 1000; // Convert delta to seconds
+		const pixelsToMove = Math.floor((this.moveSpeed * delta) / 1000); // Ensure whole pixels
 		this.movementProgress += pixelsToMove;
 
 		const startPos = this.scene.map.getTilePosition(this.tileX, this.tileY);
 		const endPos = this.scene.map.getTilePosition(this.targetTileX, this.targetTileY);
-		const progress = this.movementProgress / tileWidth;
+		const totalDistance = Math.max(
+			Math.abs(endPos.x - startPos.x),
+			Math.abs(endPos.y - startPos.y)
+		);
+		const progress = Math.min(this.movementProgress / totalDistance, 1);
 
-		this.x = Math.round(startPos.x + (endPos.x - startPos.x) * progress);
-		this.y = Math.round(startPos.y + (endPos.y - startPos.y) * progress - this.offsetY);
+		// Calculate new position, ensuring whole pixels
+		const newX = Math.floor(startPos.x + (endPos.x - startPos.x) * progress);
+		const newY = Math.floor(startPos.y + (endPos.y - startPos.y) * progress);
 
-		if (this.movementProgress >= tileWidth) {
-			this.isIdling = true;
+		this.x = newX;
+		this.y = newY - this.offsetY;
+
+		if (progress >= 1) {
+			this.x = endPos.x;
+			this.y = endPos.y - this.offsetY;
 			this.tileX = this.targetTileX;
 			this.tileY = this.targetTileY;
 			this.isMoving = false;
@@ -233,81 +231,13 @@ export class PlayerSprite extends GameObjects.Container {
 	}
 
 	private playAnimation(key: string, onComplete?: () => void) {
-		console.log('Playing animation:', key);
-		if (!key) return;
+		if (!key || this.anims.currentAnim?.key === key) return;
 
-		// Stop any current animation
-		this.playerSprite.stop();
-
-		// Reset the sprite to the first frame of the new animation
-		const animationConfig = this.scene.anims.get(key);
-		if (animationConfig) {
-			this.playerSprite.setFrame(animationConfig.frames[0].frame.name);
-		}
-
-		this.playerSprite.play(key);
+		this.play(key);
 
 		if (onComplete) {
-			this.playerSprite.once('animationcomplete', onComplete);
+			this.once('animationcomplete', onComplete);
 		}
-	}
-
-	private createAnimations() {
-		this.scene.anims.create({
-			key: 'player-idle-rear',
-			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 8, end: 8 }),
-			frameRate: 1,
-			repeat: -1 // Set to -1 for infinite repeat
-		});
-
-		this.scene.anims.create({
-			key: 'player-idle-front',
-			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 0, end: 0 }),
-			frameRate: 1,
-			repeat: -1 // Set to -1 for infinite repeat
-		});
-
-		this.scene.anims.create({
-			key: 'player-walk-down',
-			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 0, end: 7 }),
-			duration: 600,
-			repeat: -1
-		});
-
-		this.scene.anims.create({
-			key: 'player-walk-up',
-			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 8, end: 15 }),
-			duration: 600,
-			repeat: -1
-		});
-
-		this.scene.anims.create({
-			key: 'player-walk-left',
-			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 8, end: 15 }),
-			duration: 600,
-			repeat: -1
-		});
-
-		this.scene.anims.create({
-			key: 'player-walk-right',
-			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 0, end: 7 }),
-			duration: 600,
-			repeat: -1
-		});
-
-		this.scene.anims.create({
-			key: 'player-attack-rear',
-			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 20, end: 23 }),
-			frameRate: 10,
-			repeat: 0
-		});
-
-		this.scene.anims.create({
-			key: 'player-attack-front',
-			frames: this.scene.anims.generateFrameNumbers(this.textureKey, { start: 16, end: 19 }),
-			frameRate: 10,
-			repeat: 0
-		});
 	}
 
 	showChatBubble(message: string) {
@@ -317,14 +247,11 @@ export class PlayerSprite extends GameObjects.Container {
 			this.chatBubble.setMessage(message);
 		} else {
 			// Create new chat bubble
-			const bubbleX = 4;
-			const bubbleY = -16;
+			const bubbleX = 0;
+			const bubbleY = this.usernameText.visible ? -32 : -16; // Adjust Y position if username is visible
 			this.chatBubble = new ChatBubble(this.scene, bubbleX, bubbleY, message);
-			this.add(this.chatBubble);
+			this.scene.add.existing(this.chatBubble);
 		}
-
-		// Hide username text
-		this.usernameText.setVisible(false);
 
 		// Reset or create new timer
 		if (this.chatBubbleTimer) {
@@ -338,7 +265,6 @@ export class PlayerSprite extends GameObjects.Container {
 			this.chatBubble.destroy();
 			this.chatBubble = null;
 		}
-		this.usernameText.setVisible(true);
 		this.chatBubbleTimer = null;
 	}
 
@@ -352,10 +278,10 @@ export class PlayerSprite extends GameObjects.Container {
 
 	updateAnimation() {
 		const animKey = this.animationMap[this.direction].idle;
-		this.playerSprite.setFlipX(['left', 'down'].includes(this.direction));
+		this.setFlipX(['left', 'down'].includes(this.direction));
 		this.playAnimation(animKey);
 		console.log(
-			`Updated animation: direction=${this.direction}, animKey=${animKey}, flipped=${this.playerSprite.flipX}`
+			`Updated animation: direction=${this.direction}, animKey=${animKey}, flipped=${this.flipX}`
 		);
 	}
 

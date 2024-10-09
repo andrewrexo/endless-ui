@@ -57,7 +57,7 @@ export default class Preloader extends Scene {
 		this.load.spritesheet('tiles', 'tiles.png', { frameWidth: 64, frameHeight: 32 });
 
 		// Load the tilemap JSON
-		this.load.tilemapTiledJSON('map-1', 'map/1.json');
+		this.load.tilemapTiledJSON('map-1', 'map/2.json');
 		this.load.pack('objects', 'map/object-pack.json');
 	}
 

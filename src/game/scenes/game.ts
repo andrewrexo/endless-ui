@@ -55,25 +55,21 @@ export class Game extends Scene {
 			followOffset: { x: 0, y: 0 },
 			midPoint: { x: 0, y: 0 }
 		};
+		this.handleTileClick = this.handleTileClick.bind(this);
 	}
 
 	create() {
 		this.minimapCamera = this.cameras.add(0, 40, 800, 800, false, 'minimap').setVisible(false);
 		this.minimapObjectLayer = this.add.container(0, 0);
 		this.minimapObjectLayer.setDepth(1);
-		// Create and initialize the map
-		this.map = new MapRenderer(this, 0, 0);
+
+		this.map = new MapRenderer(this);
 		this.map.create();
 
-		const mapWidth = this.map.mapWidth;
-		const mapHeight = this.map.mapHeight;
-		// const centerTileX = Math.floor(mapWidth / 2) - 1;
-		// const centerTileY = Math.floor(mapHeight / 2) - 1;
 		const centerTileX = 12;
 		const centerTileY = 7;
 
-		const startPos = this.map.layer.getTileAt(centerTileX, centerTileY);
-
+		this.createPlayerAnimations();
 		this.localPlayer = this.createPlayer(centerTileX, centerTileY, '', '0');
 
 		this.cameras.main.setZoom(1);
@@ -90,9 +86,15 @@ export class Game extends Scene {
 		this.input.setPollOnMove();
 		this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-		this.map.on('tileclick', this.handleTileClick, this);
-		this.map.on('interactableclick', this.handleInteractableClick, this);
-		this.map.on(
+		// Replace these lines
+		// this.map.events.on('tileclick', this.handleTileClick, this);
+		// this.map.events.on('interactableclick', this.handleInteractableClick, this);
+		// this.map.events.on('contextmenu', (this.game.scene.getScene('NativeUI') as NativeUI)!.handleContextMenu, this);
+
+		// With these:
+		EventBus.on('tileclick', this.handleTileClick, this);
+		EventBus.on('interactableclick', this.handleInteractableClick, this);
+		EventBus.on(
 			'contextmenu',
 			(this.game.scene.getScene('NativeUI') as NativeUI)!.handleContextMenu,
 			this
@@ -114,8 +116,71 @@ export class Game extends Scene {
 		EventBus.on('item:pickup', this.handleItemPickup, this);
 		EventBus.on('item:drop', this.dropItem, this);
 
-		// Add this line after creating the map
-		this.map.on('itemclick', this.handleItemClick, this);
+		// Replace this line
+		// this.map.events.on('itemclick', this.handleItemClick, this);
+
+		// With this:
+		EventBus.on('itemclick', this.handleItemClick, this);
+	}
+
+	private createPlayerAnimations() {
+		const textureKey = 'mage'; // Assuming 'mage' is the texture key for all players
+
+		this.anims.create({
+			key: 'player-idle-rear',
+			frames: this.anims.generateFrameNumbers(textureKey, { start: 8, end: 8 }),
+			frameRate: 1,
+			repeat: -1
+		});
+
+		this.anims.create({
+			key: 'player-idle-front',
+			frames: this.anims.generateFrameNumbers(textureKey, { start: 0, end: 0 }),
+			frameRate: 1,
+			repeat: -1
+		});
+
+		this.anims.create({
+			key: 'player-walk-down',
+			frames: this.anims.generateFrameNumbers(textureKey, { start: 0, end: 7 }),
+			duration: 600,
+			repeat: -1
+		});
+
+		this.anims.create({
+			key: 'player-walk-up',
+			frames: this.anims.generateFrameNumbers(textureKey, { start: 8, end: 15 }),
+			duration: 600,
+			repeat: -1
+		});
+
+		this.anims.create({
+			key: 'player-walk-left',
+			frames: this.anims.generateFrameNumbers(textureKey, { start: 8, end: 15 }),
+			duration: 600,
+			repeat: -1
+		});
+
+		this.anims.create({
+			key: 'player-walk-right',
+			frames: this.anims.generateFrameNumbers(textureKey, { start: 0, end: 7 }),
+			duration: 600,
+			repeat: -1
+		});
+
+		this.anims.create({
+			key: 'player-attack-rear',
+			frames: this.anims.generateFrameNumbers(textureKey, { start: 20, end: 23 }),
+			frameRate: 10,
+			repeat: 0
+		});
+
+		this.anims.create({
+			key: 'player-attack-front',
+			frames: this.anims.generateFrameNumbers(textureKey, { start: 16, end: 19 }),
+			frameRate: 10,
+			repeat: 0
+		});
 	}
 
 	handleItemDrop(itemId: string, tileX: number, tileY: number) {
@@ -176,14 +241,14 @@ export class Game extends Scene {
 			}
 		});
 
-		room.state.players.onChange((player, key) => {
-			if (player) {
-				const playerSprite = this.players.find((p) => p && p.playerId === key);
-				if (playerSprite && !playerSprite.isLocalPlayer) {
-					playerSprite.serverUpdate(player);
-				}
-			}
-		});
+		// room.state.players.onChange((player, key) => {
+		// 	if (player) {
+		// 		const playerSprite = this.players.find((p) => p && p.playerId === key);
+		// 		if (playerSprite && !playerSprite.isLocalPlayer) {
+		// 			playerSprite.serverUpdate(player);
+		// 		}
+		// 	}
+		// });
 
 		room.state.players.onRemove((player, key) => {
 			const playerIndex = this.players.findIndex((p) => p.playerId === key);
@@ -478,14 +543,14 @@ export class Game extends Scene {
 		return { x, y };
 	};
 
-	handleTileClick = (tile: { x: number; y: number }) => {
+	handleTileClick = (tile: Phaser.Tilemaps.Tile) => {
 		console.log('Tile clicked:', tile);
 
 		if (this.contextMenu) {
 			this.contextMenu.setVisible(false);
 		}
 
-		this.setNewDestination(tile);
+		this.setNewDestination({ x: tile.x, y: tile.y });
 	};
 
 	setNewDestination(tile: { x: number; y: number }) {
@@ -545,7 +610,11 @@ export class Game extends Scene {
 					targetTileX: this.localPlayer.tileX,
 					targetTileY: this.localPlayer.tileY
 				});
-				this.map.emit('navigationend');
+				// Replace this line
+				// this.map.events.emit('navigationend');
+
+				// With this:
+				EventBus.emit('navigationend');
 			}
 		}
 	}
@@ -648,8 +717,17 @@ export class Game extends Scene {
 	}
 
 	destroy() {
-		EventBus.off('tile-clicked', this.handleTileClick, this);
-		// ... other cleanup code ...
+		// Add these lines to remove the event listeners when the scene is destroyed
+		EventBus.off('tileclick', this.handleTileClick, this);
+		EventBus.off('interactableclick', this.handleInteractableClick, this);
+		EventBus.off(
+			'contextmenu',
+			(this.game.scene.getScene('NativeUI') as NativeUI)!.handleContextMenu,
+			this
+		);
+		EventBus.off('itemclick', this.handleItemClick, this);
+
+		// ... existing cleanup code ...
 		window.removeEventListener('focus', this.onWindowFocus);
 		window.removeEventListener('blur', this.onWindowBlur);
 	}
