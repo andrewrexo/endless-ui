@@ -34,27 +34,13 @@ export class Game extends Scene {
 	private contextMenu: Phaser.GameObjects.DOMElement | null = null;
 	private fixedUpdateRate: number = 1000 / 60; // Fixed update rate for 60 FPS
 	private accumulatedTime: number = 0;
-	private minimapShape!: Phaser.GameObjects.Shape;
 	private room: Room<State> | null = null;
-	private cameraFollow: {
-		target: PlayerSprite | null;
-		roundPixels: boolean;
-		lerp: { x: number; y: number };
-		followOffset: { x: number; y: number };
-		midPoint: { x: number; y: number };
-	};
 	private items: Map<string, MapItem> = new Map();
+	private fpsText: Phaser.GameObjects.Text;
 
 	constructor() {
 		super('Game');
 		this.client = connect();
-		this.cameraFollow = {
-			target: null,
-			roundPixels: false,
-			lerp: { x: 0, y: 0 },
-			followOffset: { x: 0, y: 0 },
-			midPoint: { x: 0, y: 0 }
-		};
 		this.handleTileClick = this.handleTileClick.bind(this);
 	}
 
@@ -73,7 +59,6 @@ export class Game extends Scene {
 		this.localPlayer = this.createPlayer(centerTileX, centerTileY, '', '0');
 
 		this.cameras.main.setZoom(1);
-		//this.cameras.main.startFollow(this.localPlayer, false, 1, 1);
 		this.cameras.main.setRoundPixels(true);
 		this.cameras.main.fadeIn(500, 0, 0, 0);
 
@@ -86,12 +71,6 @@ export class Game extends Scene {
 		this.input.setPollOnMove();
 		this.attackKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-		// Replace these lines
-		// this.map.events.on('tileclick', this.handleTileClick, this);
-		// this.map.events.on('interactableclick', this.handleInteractableClick, this);
-		// this.map.events.on('contextmenu', (this.game.scene.getScene('NativeUI') as NativeUI)!.handleContextMenu, this);
-
-		// With these:
 		EventBus.on('tileclick', this.handleTileClick, this);
 		EventBus.on('interactableclick', this.handleInteractableClick, this);
 		EventBus.on(
@@ -104,23 +83,23 @@ export class Game extends Scene {
 		EventBus.on('chatbox:send', this.sendMessage.bind(this));
 		EventBus.on('refreshScene', this.reloadScene.bind(this), this);
 		EventBus.on('minimap:toggle', this.toggleMinimap.bind(this), this);
+		EventBus.on('item:pickup', this.handleItemPickup, this);
+		EventBus.on('item:drop', this.dropItem, this);
+		EventBus.on('itemclick', this.handleItemClick, this);
 
 		this.createNPC('mage', 2, 2, 'Mage');
 		this.addMinimap();
 
+		this.cameras.main.startFollow(this.localPlayer, true, 0.8, 0.8);
+		this.cameras.main.roundPixels = true;
+
+		this.physics.world.createDebugGraphic();
+		this.fpsText = this.add
+			.text(10, 10, '', { font: '16px Courier', color: '#00ff00' })
+			.setDepth(999)
+			.setScrollFactor(0);
+
 		this.connect();
-
-		this.customStartFollow(this.localPlayer!, false, 1, 1);
-
-		// Add event listener for item pickup
-		EventBus.on('item:pickup', this.handleItemPickup, this);
-		EventBus.on('item:drop', this.dropItem, this);
-
-		// Replace this line
-		// this.map.events.on('itemclick', this.handleItemClick, this);
-
-		// With this:
-		EventBus.on('itemclick', this.handleItemClick, this);
 	}
 
 	private createPlayerAnimations() {
@@ -493,34 +472,31 @@ export class Game extends Scene {
 	}
 
 	update(time: number, delta: number) {
-		this.accumulatedTime += delta;
+		this.accumulatedTime -= this.fixedUpdateRate;
 
-		while (this.accumulatedTime >= this.fixedUpdateRate) {
-			this.accumulatedTime -= this.fixedUpdateRate;
-
-			if (this.inputEnabled && this.localPlayer) {
-				this.handlePlayerInput(time);
-			}
-
-			this.players.forEach((player) => player.update(this.fixedUpdateRate));
-
-			if (this.localPlayer) {
-				if (this.localPlayer.isMoving) {
-					if (
-						this.localPlayer.tileX === this.localPlayer.targetTileX &&
-						this.localPlayer.tileY === this.localPlayer.targetTileY
-					) {
-						this.recalculatePath();
-					}
-				} else {
-					this.movePlayerAlongPath();
-				}
-			}
-
-			this.npcs.forEach((npc) => npc.update());
+		if (this.inputEnabled && this.localPlayer) {
+			this.handlePlayerInput(time);
 		}
 
-		this.updateCameraFollow();
+		this.players.forEach((player) => player.update(this.fixedUpdateRate));
+
+		if (this.localPlayer) {
+			if (this.localPlayer.isMoving) {
+				if (
+					this.localPlayer.tileX === this.localPlayer.targetTileX &&
+					this.localPlayer.tileY === this.localPlayer.targetTileY
+				) {
+					this.recalculatePath();
+				}
+			} else {
+				this.movePlayerAlongPath();
+			}
+		}
+
+		this.npcs.forEach((npc) => npc.update());
+
+		// Update the FPS text
+		this.fpsText.setText(`FPS: ${Math.round(this.game.loop.actualFps)}`);
 	}
 
 	handleInteractableClick = ({ npc, tile }: { npc: NPC; tile: { x: number; y: number } }) => {
@@ -752,87 +728,6 @@ export class Game extends Scene {
 			return window.orientation === 90 || window.orientation === -90;
 		} else {
 			return false;
-		}
-	}
-
-	customStartFollow(
-		target: PlayerSprite,
-		roundPixels = false,
-		lerpX = 1,
-		lerpY = lerpX,
-		offsetX = 0,
-		offsetY = offsetX
-	) {
-		this.cameraFollow.target = target;
-		this.cameraFollow.roundPixels = roundPixels;
-
-		this.cameraFollow.lerp.x = Phaser.Math.Clamp(lerpX, 0, 1);
-		this.cameraFollow.lerp.y = Phaser.Math.Clamp(lerpY, 0, 1);
-
-		// Adjust offset based on orientation
-		if (this.isLandscape()) {
-			offsetY = -window.innerHeight * 0.25; // Adjust this value as needed
-		} else {
-			offsetY = offsetY;
-		}
-
-		this.cameraFollow.followOffset.x = offsetX;
-		this.cameraFollow.followOffset.y = offsetY;
-
-		const originX = this.cameras.main.width / 2;
-		const originY = this.cameras.main.height / 2;
-
-		const fx = target.x - offsetX;
-		const fy = target.y - offsetY;
-
-		this.cameraFollow.midPoint.x = fx;
-		this.cameraFollow.midPoint.y = fy;
-
-		this.cameras.main.scrollX = fx - originX;
-		this.cameras.main.scrollY = fy - originY;
-	}
-
-	updateCameraFollow() {
-		if (!this.cameraFollow.target) return;
-
-		const camera = this.cameras.main;
-		const target = this.cameraFollow.target;
-
-		const originX = camera.width / 2;
-		const originY = camera.height / 2;
-
-		// Recalculate offsetY in case of orientation change
-		if (this.isLandscape()) {
-			this.cameraFollow.followOffset.y = -window.innerHeight * 0.25; // Adjust this value as needed
-		} else {
-			this.cameraFollow.followOffset.y = 0; // Reset for portrait mode
-		}
-
-		const fx = target.x - this.cameraFollow.followOffset.x;
-		const fy = target.y - this.cameraFollow.followOffset.y;
-
-		this.cameraFollow.midPoint.x = Phaser.Math.Linear(
-			this.cameraFollow.midPoint.x,
-			fx,
-			this.cameraFollow.lerp.x
-		);
-		this.cameraFollow.midPoint.y = Phaser.Math.Linear(
-			this.cameraFollow.midPoint.y,
-			fy,
-			this.cameraFollow.lerp.y
-		);
-
-		camera.scrollX = this.cameraFollow.midPoint.x - originX;
-		camera.scrollY = this.cameraFollow.midPoint.y - originY;
-
-		if (camera.useBounds) {
-			camera.scrollX = camera.clampX(camera.scrollX);
-			camera.scrollY = camera.clampY(camera.scrollY);
-		}
-
-		if (this.cameraFollow.roundPixels) {
-			camera.scrollX = Math.round(camera.scrollX);
-			camera.scrollY = Math.round(camera.scrollY);
 		}
 	}
 

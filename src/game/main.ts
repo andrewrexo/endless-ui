@@ -1,6 +1,6 @@
 import { Boot } from './scenes/boot';
 import { Game as GameScene } from './scenes/game';
-import { WEBGL } from 'phaser';
+import { Scale, WEBGL } from 'phaser';
 import Preloader from './scenes/preloader';
 import { NativeUI } from './scenes/native-ui';
 
@@ -12,23 +12,32 @@ const config: Phaser.Types.Core.GameConfig = {
 	height: 600,
 	parent: 'app',
 	scale: {
-		width: 800,
-		height: 600,
+		mode: Scale.NONE,
 		autoRound: true
 	},
 	dom: {
 		createContainer: true
 	},
-	zoom: 1,
 	disableContextMenu: true,
 	backgroundColor: '#000',
 	scene: [Boot, Preloader, GameScene, NativeUI],
 	render: {
 		powerPreference: 'high-performance',
-		pixelArt: true
+		pixelArt: true,
+		antialias: false
 	},
 	input: {
 		windowEvents: false
+	},
+	fps: {
+		target: 60,
+		smoothStep: true
+	},
+	physics: {
+		default: 'arcade',
+		arcade: {
+			gravity: { x: 0, y: 0 }
+		}
 	}
 };
 
