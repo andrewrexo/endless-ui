@@ -1,21 +1,4 @@
-import express from 'express';
-import { createServer } from 'http';
-import { Server } from 'colyseus';
-import { HomeRoom } from './room/home-room';
-import { BunWebSockets } from '@colyseus/bun-websockets';
+import { listen } from '@colyseus/tools';
+import appConfig from './app.config';
 
-const app = express();
-const server = createServer(app);
-
-const gameServer = new Server({
-	transport: new BunWebSockets({
-		server,
-		pingInterval: 6000,
-		pingMaxRetries: 4
-	})
-	// driver: new RedisDriver(),
-	// presence: new RedisPresence(),
-});
-
-gameServer.define('home_room', HomeRoom);
-gameServer.listen(2567);
+listen(appConfig);
