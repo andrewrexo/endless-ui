@@ -8,11 +8,12 @@ import { action } from '../../components/ui/main/action.svelte';
 import type { NativeUI } from './native-ui';
 import { ui } from '$lib/user-interface.svelte';
 import { connect } from '../../hooks/connect';
-import type { Client, Room } from 'colyseus.js';
+import { Client, type Room } from 'colyseus.js';
 import type { State } from '../../server/room/home-room';
 import { chatbox } from '../../stores/chatStore.svelte';
 import { MapItem, ItemType, type ItemProperties } from '../entities/item';
 import { itemMenuOptions } from '$lib/context';
+import { serverUrl } from '$lib';
 
 export class Game extends Scene {
 	map!: MapRenderer; // Add the '!' to fix the initialization error
@@ -36,7 +37,6 @@ export class Game extends Scene {
 	private accumulatedTime: number = 0;
 	private room: Room<State> | null = null;
 	private items: Map<string, MapItem> = new Map();
-	private fpsText: Phaser.GameObjects.Text;
 
 	constructor() {
 		super('Game');
@@ -90,14 +90,8 @@ export class Game extends Scene {
 		this.createNPC('mage', 2, 2, 'Mage');
 		this.addMinimap();
 
-		this.cameras.main.startFollow(this.localPlayer, true, 0.8, 0.8);
+		this.cameras.main.startFollow(this.localPlayer, false);
 		this.cameras.main.roundPixels = true;
-
-		this.physics.world.createDebugGraphic();
-		this.fpsText = this.add
-			.text(10, 10, '', { font: '16px Courier', color: '#00ff00' })
-			.setDepth(999)
-			.setScrollFactor(0);
 
 		this.connect();
 	}
@@ -318,30 +312,27 @@ export class Game extends Scene {
 		});
 	}
 
-	connect() {
-		this.client
-			.joinOrCreate('home_room')
-			.then((room: Room) => {
-				this.addClientHandlers(room);
-				console.log(room.sessionId, 'joined', room.name);
+	async connect() {
+		try {
+			this.room = await this.client.joinOrCreate('home_room', {});
 
-				// Generate starting position
-				const centerTileX = 12;
-				const centerTileY = 7;
+			this.addClientHandlers(this.room);
+			console.log(this.room.sessionId, 'joined', this.room.name);
 
-				room.send('player:add', {
-					x: centerTileX,
-					y: centerTileY,
-					targetTileX: centerTileX,
-					targetTileY: centerTileY,
-					name: 'Player ' + room.sessionId.substr(0, 4)
-				});
+			// Generate starting position
+			const centerTileX = 12;
+			const centerTileY = 7;
 
-				this.room = room;
-			})
-			.catch((e) => {
-				console.log('JOIN ERROR', e);
+			this.room.send('player:add', {
+				x: centerTileX,
+				y: centerTileY,
+				targetTileX: centerTileX,
+				targetTileY: centerTileY,
+				name: 'Player ' + this.room.sessionId.substr(0, 4)
 			});
+		} catch (error) {
+			console.error('Failed to connect to the server:', error);
+		}
 	}
 
 	toggleMinimap() {
@@ -500,9 +491,6 @@ export class Game extends Scene {
 		}
 
 		this.npcs.forEach((npc) => npc.update());
-
-		// Update the FPS text
-		this.fpsText.setText(`FPS: ${Math.round(this.game.loop.actualFps)}`);
 	}
 
 	handleInteractableClick = ({ npc, tile }: { npc: NPC; tile: { x: number; y: number } }) => {
@@ -661,10 +649,11 @@ export class Game extends Scene {
 					this.localPlayer.startMovement(dx, dy);
 				}
 			} else if (keyPressDuration && this.localPlayer.direction != direction) {
-				this.room.send('player:face', {
-					direction: direction
-				});
-
+				if (this.room) {
+					this.room.send('player:face', {
+						direction: direction
+					});
+				}
 				this.localPlayer.faceDirection(direction, { update: true });
 			}
 		} else {

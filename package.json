@@ -9,7 +9,8 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
-		"format": "prettier --write ."
+		"format": "prettier --write .",
+		"server:dev": "DEBUG=colyseus:* PLAYGROUND=true bun src/server/index.ts --watch"
 	},
 	"devDependencies": {
 		"@iconify/json": "^2.2.254",
@@ -44,6 +45,9 @@
 	"type": "module",
 	"dependencies": {
 		"@colyseus/bun-websockets": "^0.15.3",
+		"@colyseus/monitor": "^0.15.8",
+		"@colyseus/playground": "^0.15.14",
+		"@colyseus/tools": "^0.15.42",
 		"@colyseus/uwebsockets-transport": "^0.15.9",
 		"@colyseus/ws-transport": "^0.15.2",
 		"@tauri-apps/api": "^2.0.0-rc.0",
