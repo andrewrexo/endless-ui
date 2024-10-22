@@ -4,9 +4,9 @@ Hometown is a web-based multiplayer online game built with Phaser 3, Svelte 5, T
 
 More features are planned; at the moment it's more of a social experience & proof of concept.
 
-## Features
-
 <img width="400" alt="image" src="https://github.com/user-attachments/assets/4da0420f-4f3d-4b1f-9239-d5d3f96037d8">
+
+## Features
 
 - Isometric game world
 - Multi-layered maps
